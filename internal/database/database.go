@@ -1,19 +1,22 @@
 package database
 
 import (
-	"log"
+	"crm-backend/internal/config"
+	"fmt"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func ConnectDatabase() *gorm.DB {
-	dsn := "host=localhost user=postgres password=postgres dbname=crm port=5432 sslmode=disable"
+func ConnectDatabase() (*gorm.DB, error) {
+	c := config.Load()
+
+	dsn := c.DatabaseDSN()
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect database:", err)
+		return nil, fmt.Errorf("connect database: %w", err)
 	}
 
-	return db
+	return db, nil
 }
