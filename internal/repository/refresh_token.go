@@ -63,5 +63,5 @@ func (r *redisRefreshTokenRepository) Delete(ctx context.Context, tokenHash stri
 }
 
 func (r *redisRefreshTokenRepository) key(tokenHash string) string {
-	return "refresh:" + tokenHash
+	return "auth:refresh:" + tokenHash
 }
