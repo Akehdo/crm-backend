@@ -14,6 +14,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	FindByEmail(ctx context.Context, email string) (*domain.User, error)
+	FindById(ctx context.Context, userID uint) (*domain.User, error)
 }
 
 type userRepository struct {
@@ -24,6 +25,27 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepository{
 		db: db,
 	}
+}
+
+func (r *userRepository) FindById(ctx context.Context, userID uint) (*domain.User, error) {
+	var user domain.User
+
+	err := r.db.WithContext(ctx).
+		Where("id = ?", userID).
+		First(&user).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, app_errors.ErrUserNotFound
+		}
+
+		return nil, fmt.Errorf(
+			"find user by id: %w",
+			err,
+		)
+	}
+
+	return &user, nil
 }
 
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
@@ -40,7 +62,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 		}
 
 		return nil, fmt.Errorf(
-			"find user by email: w%",
+			"find user by email: %w",
 			err,
 		)
 	}
@@ -49,7 +71,7 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain
 }
 
 func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
-	var user *domain.User
+	var user domain.User
 
 	err := r.db.WithContext(ctx).
 		Select("id").
@@ -63,7 +85,7 @@ func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 		}
 
 		return false, fmt.Errorf(
-			"check if user exists by email: w%",
+			"check if user exists by email: %w",
 			err,
 		)
 	}

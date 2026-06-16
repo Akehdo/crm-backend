@@ -58,3 +58,7 @@ func (m *TokenManager) HashRefreshToken(token string) string {
 
 	return hex.EncodeToString(mac.Sum(nil))
 }
+
+func (m *TokenManager) RefreshTTL() time.Duration {
+	return m.refreshTTL
+}
