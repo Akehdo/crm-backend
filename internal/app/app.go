@@ -1,8 +1,8 @@
 package app
 
 import (
+	"crm-backend/internal/adapters"
 	"crm-backend/internal/config"
-	"crm-backend/internal/database"
 	"crm-backend/internal/domain"
 	"crm-backend/internal/handler"
 	"crm-backend/internal/repository"
@@ -24,16 +24,16 @@ func Run() error {
 		return fmt.Errorf("jwt secrets must be configured")
 	}
 
-	db, err := database.ConnectDatabase(cfg.DatabaseDSN())
+	db, err := adapters.ConnectDatabase(cfg.DatabaseDSN())
 	if err != nil {
 		return err
 	}
 
 	if err := db.AutoMigrate(&domain.User{}); err != nil {
-		return fmt.Errorf("migrate database: %w", err)
+		return fmt.Errorf("migrate adapters: %w", err)
 	}
 
-	redisClient, err := config.NewRedisClient(
+	redisClient, err := adapters.NewRedisClient(
 		cfg.RedisAddr,
 		cfg.RedisPassword,
 		cfg.RedisDB,
