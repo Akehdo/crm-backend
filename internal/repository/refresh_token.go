@@ -11,7 +11,7 @@ import (
 
 type RefreshTokenRepository interface {
 	Save(ctx context.Context, tokenHash string, userId uint, duration time.Duration) error
-	GetUserId(ctx context.Context, tokenHash string) (uint, error)
+	GetUserID(ctx context.Context, tokenHash string) (uint, error)
 	Delete(ctx context.Context, tokenHash string) error
 }
 
@@ -33,7 +33,7 @@ func (r *redisRefreshTokenRepository) Save(
 	return r.client.Set(ctx, key, userId, duration).Err()
 }
 
-func (r *redisRefreshTokenRepository) GetUserId(
+func (r *redisRefreshTokenRepository) GetUserID(
 	ctx context.Context,
 	tokenHash string,
 ) (uint, error) {

@@ -14,7 +14,7 @@ type UserRepository interface {
 	Create(ctx context.Context, user *domain.User) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	FindByEmail(ctx context.Context, email string) (*domain.User, error)
-	FindById(ctx context.Context, userID uint) (*domain.User, error)
+	FindByID(ctx context.Context, userID uint) (*domain.User, error)
 }
 
 type userRepository struct {
@@ -27,7 +27,7 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	}
 }
 
-func (r *userRepository) FindById(ctx context.Context, userID uint) (*domain.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, userID uint) (*domain.User, error) {
 	var user domain.User
 
 	err := r.db.WithContext(ctx).

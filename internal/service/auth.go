@@ -109,7 +109,7 @@ func (s *authService) Refresh(ctx context.Context, oldRefreshToken string) (*Aut
 
 	hashedOldToken := s.tokenManager.HashRefreshToken(oldRefreshToken)
 
-	userID, err := s.refTokenRepo.GetUserId(ctx, hashedOldToken)
+	userID, err := s.refTokenRepo.GetUserID(ctx, hashedOldToken)
 	if err != nil {
 		return nil, app_errors.ErrInvalidCredentials
 	}
@@ -118,7 +118,7 @@ func (s *authService) Refresh(ctx context.Context, oldRefreshToken string) (*Aut
 		return nil, err
 	}
 
-	user, err := s.userRepo.FindById(ctx, userID)
+	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

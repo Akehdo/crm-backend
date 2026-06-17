@@ -1,2 +1,43 @@
-.idea
+# IDE / editor
+.idea/
+.vscode/
+
+# Env files
 .env
+.env.*
+!.env.example
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Project binaries / build output
+bin/
+build/
+dist/
+
+# Coverage
+coverage.out
+coverage.html
+*.cover
+*.coverage
+
+# Go workspace / temporary files
+tmp/
+.temp/
+.cache/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Air live reload, если будешь использовать
+.air.toml
