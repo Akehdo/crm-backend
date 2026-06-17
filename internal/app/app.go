@@ -9,11 +9,15 @@ import (
 	"crm-backend/internal/security"
 	"crm-backend/internal/service"
 	"fmt"
+	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func Run() error {
+	_ = godotenv.Load()
+
 	cfg := config.Load()
 
 	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {
@@ -38,7 +42,11 @@ func Run() error {
 		return fmt.Errorf("connect redis: %w", err)
 	}
 
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			log.Printf("close redis client: %v", err)
+		}
+	}()
 
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(redisClient)
