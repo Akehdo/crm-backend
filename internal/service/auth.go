@@ -6,7 +6,7 @@ import (
 	"crm-backend/internal/domain"
 	"crm-backend/internal/repository"
 	"crm-backend/internal/security"
-	
+
 	"golang.org/x/crypto/bcrypt"
 )
 
