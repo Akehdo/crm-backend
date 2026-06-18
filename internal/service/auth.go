@@ -56,7 +56,7 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 		return app_errors.ErrUserAlreadyExists
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("register: hash password: %w", err)
 	}
