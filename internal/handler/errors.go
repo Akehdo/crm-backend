@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 
+	"crm-backend/internal/app_errors"
 	"crm-backend/internal/handler/dto"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +16,7 @@ const (
 	errorCodeValidationFailed    = "VALIDATION_FAILED"
 	errorCodeInvalidCredentials  = "INVALID_CREDENTIALS"
 	errorCodeUserAlreadyExists   = "USER_ALREADY_EXISTS"
+	errorCodeUserNotFound        = "USER_NOT_FOUND"
 	errorCodeInvalidRefreshToken = "INVALID_REFRESH_TOKEN"
 	errorCodeInternal            = "INTERNAL_ERROR"
 )
@@ -57,4 +60,43 @@ func writeInternalError(c *gin.Context, operation string, err error) {
 		errorCodeInternal,
 		"internal server error",
 	)
+}
+
+func writeAppError(c *gin.Context, operation string, err error) {
+	switch {
+	case errors.Is(err, app_errors.ErrInvalidCredentials):
+		writeError(
+			c,
+			http.StatusUnauthorized,
+			errorCodeInvalidCredentials,
+			"invalid email or password",
+		)
+
+	case errors.Is(err, app_errors.ErrInvalidRefreshToken):
+		writeError(
+			c,
+			http.StatusUnauthorized,
+			errorCodeInvalidRefreshToken,
+			"invalid refresh token",
+		)
+
+	case errors.Is(err, app_errors.ErrUserAlreadyExists):
+		writeError(
+			c,
+			http.StatusConflict,
+			errorCodeUserAlreadyExists,
+			"user already exists",
+		)
+
+	case errors.Is(err, app_errors.ErrUserNotFound):
+		writeError(
+			c,
+			http.StatusNotFound,
+			errorCodeUserNotFound,
+			"user not found",
+		)
+
+	default:
+		writeInternalError(c, operation, err)
+	}
 }

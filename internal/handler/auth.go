@@ -1,11 +1,10 @@
 package handler
 
 import (
-	"crm-backend/internal/app_errors"
+	"net/http"
+
 	"crm-backend/internal/handler/dto"
 	"crm-backend/internal/service"
-	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,17 +26,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	tokens, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrInvalidCredentials) {
-			writeError(
-				c,
-				http.StatusUnauthorized,
-				errorCodeInvalidCredentials,
-				"invalid email or password",
-			)
-			return
-		}
-
-		writeInternalError(c, "login failed", err)
+		writeAppError(c, "login failed", err)
 		return
 	}
 
@@ -56,17 +45,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	err := h.authService.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrUserAlreadyExists) {
-			writeError(
-				c,
-				http.StatusConflict,
-				errorCodeUserAlreadyExists,
-				"user already exists",
-			)
-			return
-		}
-
-		writeInternalError(c, "register user failed", err)
+		writeAppError(c, "register user failed", err)
 		return
 	}
 
@@ -83,7 +62,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
-		writeInternalError(c, "logout failed", err)
+		writeAppError(c, "logout failed", err)
 		return
 	}
 
@@ -101,17 +80,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	tokens, err := h.authService.Refresh(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		if errors.Is(err, app_errors.ErrInvalidRefreshToken) {
-			writeError(
-				c,
-				http.StatusUnauthorized,
-				errorCodeInvalidRefreshToken,
-				"invalid refresh token",
-			)
-			return
-		}
-
-		writeInternalError(c, "refresh token failed", err)
+		writeAppError(c, "refresh token failed", err)
 		return
 	}
 
