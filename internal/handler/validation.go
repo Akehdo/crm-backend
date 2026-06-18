@@ -34,6 +34,16 @@ func ConfigureValidator() error {
 }
 
 func writeValidationError(c *gin.Context, err error) {
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+		writeError(
+			c,
+			http.StatusRequestEntityTooLarge,
+			errorCodeRequestTooLarge,
+			"request body is too large",
+		)
+		return
+	}
+
 	validationErrors, ok := errors.AsType[validator.ValidationErrors](err)
 	if !ok {
 		writeError(

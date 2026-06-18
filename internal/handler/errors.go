@@ -19,6 +19,7 @@ const (
 	errorCodeUserNotFound        = "USER_NOT_FOUND"
 	errorCodeInvalidRefreshToken = "INVALID_REFRESH_TOKEN"
 	errorCodeInternal            = "INTERNAL_ERROR"
+	errorCodeRequestTooLarge     = "REQUEST_TOO_LARGE"
 )
 
 func writeError(
