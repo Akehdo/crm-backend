@@ -2,11 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
+
 	"crm-backend/internal/app_errors"
 	"crm-backend/internal/domain"
 	"crm-backend/internal/repository"
 	"crm-backend/internal/security"
-	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -76,12 +79,20 @@ func (s *authService) Login(ctx context.Context, email string, password string) 
 
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return nil, app_errors.ErrInvalidCredentials
+		if errors.Is(err, app_errors.ErrUserNotFound) {
+			return nil, app_errors.ErrInvalidCredentials
+		}
+
+		return nil, fmt.Errorf("login: find user by email: %w", err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
-		return nil, app_errors.ErrInvalidCredentials
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return nil, app_errors.ErrInvalidCredentials
+		}
+
+		return nil, fmt.Errorf("login: compare password hash: %w", err)
 	}
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID, user.Role)
@@ -109,39 +120,47 @@ func (s *authService) Login(ctx context.Context, email string, password string) 
 
 func (s *authService) Refresh(ctx context.Context, oldRefreshToken string) (*AuthTokens, error) {
 	if oldRefreshToken == "" {
-		return nil, app_errors.ErrInvalidCredentials
+		return nil, app_errors.ErrInvalidRefreshToken
 	}
 
 	hashedOldToken := s.tokenManager.HashRefreshToken(oldRefreshToken)
 
 	userID, err := s.refTokenRepo.GetUserID(ctx, hashedOldToken)
 	if err != nil {
-		return nil, app_errors.ErrInvalidCredentials
+		if errors.Is(err, app_errors.ErrRefreshTokenNotFound) {
+			return nil, app_errors.ErrInvalidRefreshToken
+		}
+
+		return nil, fmt.Errorf("refresh: get token: %w", err)
 	}
 
 	if err = s.refTokenRepo.Delete(ctx, hashedOldToken); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("refresh: delete old token: %w", err)
 	}
 
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, app_errors.ErrUserNotFound) {
+			return nil, app_errors.ErrInvalidRefreshToken
+		}
+
+		return nil, fmt.Errorf("refresh: find user: %w", err)
 	}
 
 	newAccessToken, err := s.tokenManager.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("refresh: generate access token: %w", err)
 	}
 
 	newRefreshToken, err := s.tokenManager.GenerateRefreshToken()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("refresh: generate refresh token: %w", err)
 	}
 
 	hashedNewToken := s.tokenManager.HashRefreshToken(newRefreshToken)
 
 	if err := s.refTokenRepo.Save(ctx, hashedNewToken, userID, s.tokenManager.RefreshTTL()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("refresh: save new token: %w", err)
 	}
 
 	return &AuthTokens{

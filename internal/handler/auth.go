@@ -27,9 +27,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	tokens, err := h.authService.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "invalid credentials",
-		})
+		if errors.Is(err, app_errors.ErrInvalidCredentials) {
+			writeError(
+				c,
+				http.StatusUnauthorized,
+				errorCodeInvalidCredentials,
+				"invalid email or password",
+			)
+			return
+		}
+
+		writeInternalError(c, "login failed", err)
 		return
 	}
 
@@ -49,14 +57,16 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	err := h.authService.Register(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, app_errors.ErrUserAlreadyExists) {
-			c.JSON(http.StatusConflict, dto.ErrorResponse{
-				Error: "user already exists",
-			})
+			writeError(
+				c,
+				http.StatusConflict,
+				errorCodeUserAlreadyExists,
+				"user already exists",
+			)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "internal server error",
-		})
+
+		writeInternalError(c, "register user failed", err)
 		return
 	}
 
@@ -73,9 +83,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 
 	if err := h.authService.Logout(c.Request.Context(), req.RefreshToken); err != nil {
-		c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Error: "internal server error",
-		})
+		writeInternalError(c, "logout failed", err)
 		return
 	}
 
@@ -93,9 +101,17 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 	tokens, err := h.authService.Refresh(c.Request.Context(), req.RefreshToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Error: "invalid refresh token",
-		})
+		if errors.Is(err, app_errors.ErrInvalidRefreshToken) {
+			writeError(
+				c,
+				http.StatusUnauthorized,
+				errorCodeInvalidRefreshToken,
+				"invalid refresh token",
+			)
+			return
+		}
+
+		writeInternalError(c, "refresh token failed", err)
 		return
 	}
 

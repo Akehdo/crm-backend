@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"crm-backend/internal/handler/dto"
 	"errors"
 	"net/http"
 	"reflect"
@@ -37,9 +36,12 @@ func ConfigureValidator() error {
 func writeValidationError(c *gin.Context, err error) {
 	validationErrors, ok := errors.AsType[validator.ValidationErrors](err)
 	if !ok {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid JSON body",
-		})
+		writeError(
+			c,
+			http.StatusBadRequest,
+			errorCodeInvalidRequest,
+			"invalid JSON body",
+		)
 		return
 	}
 
@@ -50,10 +52,7 @@ func writeValidationError(c *gin.Context, err error) {
 			validationErrorMessage(validationError)
 	}
 
-	c.JSON(http.StatusBadRequest, dto.ValidationErrorResponse{
-		Error:  "validation failed",
-		Fields: fields,
-	})
+	writeFieldErrors(c, fields)
 }
 
 func validationErrorMessage(validationError validator.FieldError) string {

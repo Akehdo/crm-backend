@@ -1,5 +1,11 @@
 package dto
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error ErrorDetails `json:"error"`
+}
+
+type ErrorDetails struct {
+	Code    string            `json:"code"`
+	Message string            `json:"message"`
+	Fields  map[string]string `json:"fields,omitempty"`
 }
