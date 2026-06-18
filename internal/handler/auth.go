@@ -2,7 +2,7 @@ package handler
 
 import (
 	"crm-backend/internal/app_errors"
-	"crm-backend/internal/dto"
+	"crm-backend/internal/handler/dto"
 	"crm-backend/internal/service"
 	"errors"
 	"net/http"
@@ -21,10 +21,7 @@ func NewAuthHandler(authService service.AuthService) *AuthHandler {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request body",
-		})
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -45,10 +42,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request body",
-		})
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -74,10 +68,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req dto.RefreshRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request body",
-		})
+	if !bindJSON(c, &req) {
 		return
 	}
 
@@ -96,10 +87,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	var req dto.RefreshRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Error: "invalid request body",
-		})
+	if !bindJSON(c, &req) {
 		return
 	}
 

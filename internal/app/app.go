@@ -18,6 +18,10 @@ import (
 func Run() error {
 	_ = godotenv.Load()
 
+	if err := handler.ConfigureValidator(); err != nil {
+		return fmt.Errorf("configure validator: %w", err)
+	}
+
 	cfg := config.Load()
 
 	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {

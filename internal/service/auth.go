@@ -6,6 +6,7 @@ import (
 	"crm-backend/internal/domain"
 	"crm-backend/internal/repository"
 	"crm-backend/internal/security"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -41,6 +42,8 @@ func NewAuthService(
 }
 
 func (s *authService) Register(ctx context.Context, email string, password string) error {
+	email = normalizeEmail(email)
+
 	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
 		return err
@@ -69,6 +72,8 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 
 }
 func (s *authService) Login(ctx context.Context, email string, password string) (*AuthTokens, error) {
+	email = normalizeEmail(email)
+
 	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, app_errors.ErrInvalidCredentials
@@ -157,4 +162,8 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	return nil
+}
+
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
 }
