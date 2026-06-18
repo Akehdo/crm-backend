@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
-	"crm-backend/internal/app_errors"
-	"crm-backend/internal/domain"
 	"errors"
 	"fmt"
+
+	"crm-backend/internal/app_errors"
+	"crm-backend/internal/domain"
 
 	"gorm.io/gorm"
 )
@@ -99,6 +100,10 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 		Error
 
 	if err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return app_errors.ErrUserAlreadyExists
+		}
+
 		return fmt.Errorf("create user: %w", err)
 	}
 

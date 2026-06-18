@@ -49,7 +49,7 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 
 	exists, err := s.userRepo.ExistsByEmail(ctx, email)
 	if err != nil {
-		return err
+		return fmt.Errorf("register: check existing user: %w", err)
 	}
 
 	if exists {
@@ -58,7 +58,7 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
 	if err != nil {
-		return err
+		return fmt.Errorf("register: hash password: %w", err)
 	}
 
 	user := domain.User{
@@ -68,7 +68,11 @@ func (s *authService) Register(ctx context.Context, email string, password strin
 	}
 
 	if err := s.userRepo.Create(ctx, &user); err != nil {
-		return err
+		if errors.Is(err, app_errors.ErrUserAlreadyExists) {
+			return app_errors.ErrUserAlreadyExists
+		}
+
+		return fmt.Errorf("register: create user: %w", err)
 	}
 
 	return nil
@@ -97,18 +101,18 @@ func (s *authService) Login(ctx context.Context, email string, password string) 
 
 	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID, user.Role)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("login: generate access token: %w", err)
 	}
 
 	refreshToken, err := s.tokenManager.GenerateRefreshToken()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("login: generate refresh token: %w", err)
 	}
 
 	hashedToken := s.tokenManager.HashRefreshToken(refreshToken)
 
 	if err := s.refTokenRepo.Save(ctx, hashedToken, user.ID, s.tokenManager.RefreshTTL()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("login: save refresh token: %w", err)
 	}
 
 	return &AuthTokens{
@@ -177,7 +181,7 @@ func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	hashedToken := s.tokenManager.HashRefreshToken(refreshToken)
 
 	if err := s.refTokenRepo.Delete(ctx, hashedToken); err != nil {
-		return err
+		return fmt.Errorf("logout: delete refresh token: %w", err)
 	}
 
 	return nil
