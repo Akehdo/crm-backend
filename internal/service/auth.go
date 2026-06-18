@@ -129,17 +129,13 @@ func (s *authService) Refresh(ctx context.Context, oldRefreshToken string) (*Aut
 
 	hashedOldToken := s.tokenManager.HashRefreshToken(oldRefreshToken)
 
-	userID, err := s.refTokenRepo.GetUserID(ctx, hashedOldToken)
+	userID, err := s.refTokenRepo.Consume(ctx, hashedOldToken)
 	if err != nil {
 		if errors.Is(err, app_errors.ErrRefreshTokenNotFound) {
 			return nil, app_errors.ErrInvalidRefreshToken
 		}
 
-		return nil, fmt.Errorf("refresh: get token: %w", err)
-	}
-
-	if err = s.refTokenRepo.Delete(ctx, hashedOldToken); err != nil {
-		return nil, fmt.Errorf("refresh: delete old token: %w", err)
+		return nil, fmt.Errorf("refresh: consume token: %w", err)
 	}
 
 	user, err := s.userRepo.FindByID(ctx, userID)
