@@ -1,6 +1,7 @@
 package security
 
 import (
+	"crm-backend/internal/app_errors"
 	"crm-backend/internal/domain"
 	"crypto/hmac"
 	"crypto/rand"
@@ -20,6 +21,16 @@ type TokenManager struct {
 	refreshTTL    time.Duration
 }
 
+type AccessTokenClaims struct {
+	UserID uint
+	Role   domain.Role
+}
+
+type jwtAccessTokenClaims struct {
+	Role domain.Role `json:"role"`
+	jwt.RegisteredClaims
+}
+
 func NewTokenManager(accessSecret string, refreshSecret string, accessTTL time.Duration, refreshTTL time.Duration) *TokenManager {
 	return &TokenManager{
 		accessSecret:  accessSecret,
@@ -27,6 +38,40 @@ func NewTokenManager(accessSecret string, refreshSecret string, accessTTL time.D
 		accessTTL:     accessTTL,
 		refreshTTL:    refreshTTL,
 	}
+}
+
+func (m *TokenManager) ParseAccessToken(tokenString string) (*AccessTokenClaims, error) {
+	claims := &jwtAccessTokenClaims{}
+
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(token *jwt.Token) (any, error) {
+			return []byte(m.accessSecret), nil
+		},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+		jwt.WithExpirationRequired(),
+		jwt.WithIssuedAt(),
+	)
+	if err != nil || !token.Valid {
+		return nil, app_errors.ErrInvalidAccessToken
+	}
+
+	userID, err := strconv.ParseUint(claims.Subject, 10, strconv.IntSize)
+	if err != nil || userID == 0 {
+		return nil, app_errors.ErrInvalidAccessToken
+	}
+
+	switch claims.Role {
+	case domain.RoleUser, domain.RoleAdmin:
+	default:
+		return nil, app_errors.ErrInvalidAccessToken
+	}
+
+	return &AccessTokenClaims{
+		UserID: uint(userID),
+		Role:   claims.Role,
+	}, nil
 }
 
 func (m *TokenManager) GenerateAccessToken(userID uint, role domain.Role) (string, error) {
