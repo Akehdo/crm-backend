@@ -13,7 +13,7 @@ var (
 
 type Parcel struct {
 	ID          uint   `gorm:"primary_key"`
-	TrackNumber string `gorm:"size:255;not null"`
+	TrackNumber string `gorm:"size:255;not null; uniqueIndex"`
 
 	Status Status `gorm:"type:varchar(20);not null"`
 
