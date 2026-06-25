@@ -33,7 +33,7 @@ func Run() error {
 		return err
 	}
 
-	if err := db.AutoMigrate(&domain.User{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Parcel{}); err != nil {
 		return fmt.Errorf("migrate adapters: %w", err)
 	}
 
@@ -53,6 +53,7 @@ func Run() error {
 	}()
 
 	userRepo := repository.NewUserRepository(db)
+	parcelRepo := repository.NewParcelRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(redisClient)
 
 	tokenManager := security.NewTokenManager(
@@ -67,12 +68,14 @@ func Run() error {
 		refreshTokenRepo,
 		tokenManager,
 	)
+	parcelService := service.NewParcelService(parcelRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
+	parcelHandler := handler.NewParcelHandler(parcelService)
 
 	router := gin.Default()
 
-	registerRoutes(router, authHandler)
+	registerRoutes(router, authHandler, parcelHandler)
 
 	return router.Run(":" + cfg.HTTPPort)
 }

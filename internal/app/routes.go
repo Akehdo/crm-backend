@@ -8,7 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerRoutes(router *gin.Engine, authHandler *handler.AuthHandler) {
+func registerRoutes(
+	router *gin.Engine,
+	authHandler *handler.AuthHandler,
+	parcelHandler *handler.ParcelHandler,
+) {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",
@@ -23,5 +27,13 @@ func registerRoutes(router *gin.Engine, authHandler *handler.AuthHandler) {
 		auth.POST("/login", authHandler.Login)
 		auth.POST("/refresh", authHandler.Refresh)
 		auth.POST("/logout", authHandler.Logout)
+	}
+
+	parcels := router.Group("/parcels")
+	const parcelsBodyLimit int64 = 64 * 1024
+	parcels.Use(middleware.BodyLimit(parcelsBodyLimit))
+	{
+		parcels.POST("", parcelHandler.Create)
+		parcels.PUT("/status", parcelHandler.UpsertStatus)
 	}
 }

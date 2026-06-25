@@ -5,10 +5,10 @@ import "time"
 type Status string
 
 var (
-	AddedInDB      Status = "added"
-	Shipped        Status = "shipped"
-	ArrivedInAlm   Status = "almaty"
-	ArrivedInKoksh Status = "koksh"
+	ParcelStatusAdded   Status = "added"
+	ParcelStatusShipped Status = "shipped"
+	ParcelStatusAlmaty  Status = "almaty"
+	ParcelStatusKoksh   Status = "koksh"
 )
 
 type Parcel struct {

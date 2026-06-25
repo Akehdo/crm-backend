@@ -28,6 +28,7 @@ func NewParcelService(repo repository.ParcelRepository) ParcelService {
 }
 
 func (s *parcelService) Create(ctx context.Context, trackNumbers []string) error {
+	trackNumbers = normalizeTrackNumbers(trackNumbers)
 	if len(trackNumbers) == 0 {
 		return errors.New("track numbers are required")
 	}
@@ -35,14 +36,9 @@ func (s *parcelService) Create(ctx context.Context, trackNumbers []string) error
 	parcels := make([]domain.Parcel, 0, len(trackNumbers))
 
 	for _, trackNumber := range trackNumbers {
-		trackNumber := strings.TrimSpace(trackNumber)
-		if trackNumber == "" {
-			continue
-		}
-
 		parcels = append(parcels, domain.Parcel{
 			TrackNumber: trackNumber,
-			Status:      domain.AddedInDB,
+			Status:      domain.ParcelStatusAdded,
 		})
 	}
 
