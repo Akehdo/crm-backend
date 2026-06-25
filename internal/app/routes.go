@@ -3,6 +3,7 @@ package app
 import (
 	"crm-backend/internal/handler"
 	"crm-backend/internal/middleware"
+	"crm-backend/internal/security"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ func registerRoutes(
 	router *gin.Engine,
 	authHandler *handler.AuthHandler,
 	parcelHandler *handler.ParcelHandler,
+	tokenManager *security.TokenManager,
 ) {
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -32,6 +34,7 @@ func registerRoutes(
 	parcels := router.Group("/parcels")
 	const parcelsBodyLimit int64 = 64 * 1024
 	parcels.Use(middleware.BodyLimit(parcelsBodyLimit))
+	parcels.Use(middleware.IsAuthenticated(tokenManager))
 	{
 		parcels.POST("", parcelHandler.Create)
 		parcels.PUT("/status", parcelHandler.UpsertStatus)
