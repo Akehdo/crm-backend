@@ -5,11 +5,12 @@ import (
 	"crm-backend/internal/domain"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ParcelRepository interface {
 	CreateOneOrMany(ctx context.Context, parcels []domain.Parcel) error
-	UpdateStatusOneOrMany(ctx context.Context, trackNumbers []string, status domain.Status) error
+	UpsertStatus(ctx context.Context, parcels []domain.Parcel) error
 }
 
 type parcelRepository struct {
@@ -24,11 +25,15 @@ func (r *parcelRepository) CreateOneOrMany(ctx context.Context, parcels []domain
 	return r.db.WithContext(ctx).Create(&parcels).Error
 }
 
-func (r *parcelRepository) UpdateStatusOneOrMany(ctx context.Context, trackNumbers []string, status domain.Status) error {
-
+func (r *parcelRepository) UpsertStatus(ctx context.Context, parcels []domain.Parcel) error {
 	return r.db.WithContext(ctx).
-		Model(&domain.Parcel{}).
-		Where("track_number IN ?", trackNumbers).
-		Update("status", status).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "track_number"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"status",
+				"updated_at",
+			}),
+		}).
+		Create(&parcels).
 		Error
 }
