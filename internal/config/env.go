@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -24,7 +25,8 @@ type Config struct {
 	AccessTTL        time.Duration
 	RefreshTTL       time.Duration
 
-	HTTPPort string
+	HTTPPort           string
+	CORSAllowedOrigins []string
 }
 
 func Load() Config {
@@ -43,6 +45,10 @@ func Load() Config {
 		AccessTTL:        getEnvAsDuration("ACCESS_TTL", 15*time.Minute),
 		RefreshTTL:       getEnvAsDuration("REFRESH_TTL", 30*24*time.Hour),
 		HTTPPort:         getEnv("HTTP_PORT", "8080"),
+		CORSAllowedOrigins: getEnvAsCSV(
+			"CORS_ALLOWED_ORIGINS",
+			"http://localhost:5173,http://127.0.0.1:5173",
+		),
 	}
 }
 
@@ -92,4 +98,19 @@ func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
 	}
 
 	return parsed
+}
+
+func getEnvAsCSV(key string, defaultValue string) []string {
+	value := getEnv(key, defaultValue)
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
+		}
+	}
+
+	return result
 }

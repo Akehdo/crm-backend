@@ -5,6 +5,7 @@ import (
 	"crm-backend/internal/config"
 	"crm-backend/internal/domain"
 	"crm-backend/internal/handler"
+	"crm-backend/internal/middleware"
 	"crm-backend/internal/repository"
 	"crm-backend/internal/security"
 	"crm-backend/internal/service"
@@ -74,6 +75,7 @@ func Run() error {
 	parcelHandler := handler.NewParcelHandler(parcelService)
 
 	router := gin.Default()
+	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
 	registerRoutes(router, authHandler, parcelHandler, tokenManager)
 
