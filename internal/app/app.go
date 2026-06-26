@@ -75,7 +75,7 @@ func Run() error {
 
 	router := gin.Default()
 
-	registerRoutes(router, authHandler, parcelHandler)
+	registerRoutes(router, authHandler, parcelHandler, tokenManager)
 
 	return router.Run(":" + cfg.HTTPPort)
 }

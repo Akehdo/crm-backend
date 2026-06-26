@@ -4,6 +4,7 @@ import (
 	"context"
 	"crm-backend/internal/domain"
 	"crm-backend/internal/repository"
+	"crm-backend/pkg/pagination"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,6 +13,12 @@ import (
 
 type ParcelService interface {
 	Create(ctx context.Context, trackNumbers []string) error
+	GetByTrackNumber(ctx context.Context, trackNumber string) (*domain.Parcel, error)
+	List(
+		ctx context.Context,
+		status *domain.Status,
+		params pagination.Params,
+	) ([]domain.Parcel, int64, error)
 	UpsertStatus(
 		ctx context.Context,
 		trackNumbers []string,
@@ -47,6 +54,23 @@ func (s *parcelService) Create(ctx context.Context, trackNumbers []string) error
 	}
 
 	return nil
+}
+
+func (s *parcelService) GetByTrackNumber(ctx context.Context, trackNumber string) (*domain.Parcel, error) {
+	return s.repo.GetByTrackNumber(ctx, trackNumber)
+}
+
+func (s *parcelService) List(
+	ctx context.Context,
+	status *domain.Status,
+	params pagination.Params,
+) ([]domain.Parcel, int64, error) {
+	parcels, total, err := s.repo.List(ctx, status, params.Limit, params.Offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list parcels: %w", err)
+	}
+
+	return parcels, total, nil
 }
 
 func (s *parcelService) UpsertStatus(

@@ -17,6 +17,7 @@ const (
 	errorCodeInvalidCredentials  = "INVALID_CREDENTIALS"
 	errorCodeUserAlreadyExists   = "USER_ALREADY_EXISTS"
 	errorCodeUserNotFound        = "USER_NOT_FOUND"
+	errorCodeParcelNotFound      = "PARCEL_NOT_FOUND"
 	errorCodeInvalidRefreshToken = "INVALID_REFRESH_TOKEN"
 	errorCodeInternal            = "INTERNAL_ERROR"
 	errorCodeRequestTooLarge     = "REQUEST_TOO_LARGE"
@@ -95,6 +96,14 @@ func writeAppError(c *gin.Context, operation string, err error) {
 			http.StatusNotFound,
 			errorCodeUserNotFound,
 			"user not found",
+		)
+
+	case errors.Is(err, app_errors.ErrParcelNotFound):
+		writeError(
+			c,
+			http.StatusNotFound,
+			errorCodeParcelNotFound,
+			"parcel not found",
 		)
 
 	default:

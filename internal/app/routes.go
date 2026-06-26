@@ -36,6 +36,8 @@ func registerRoutes(
 	parcels.Use(middleware.BodyLimit(parcelsBodyLimit))
 	parcels.Use(middleware.IsAuthenticated(tokenManager))
 	{
+		parcels.GET("", parcelHandler.List)
+		parcels.GET("/:track_number", parcelHandler.GetByTrackNumber)
 		parcels.POST("", parcelHandler.Create)
 		parcels.PUT("/status", parcelHandler.UpsertStatus)
 	}
