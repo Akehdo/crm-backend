@@ -4,7 +4,7 @@ import "time"
 
 type PaymentType string
 
-var (
+const (
 	KaspiQR PaymentType = "kaspiQR"
 	Card    PaymentType = "card"
 	Cash    PaymentType = "cash"
@@ -12,9 +12,9 @@ var (
 
 type Record struct {
 	ID         uint `gorm:"primaryKey"`
-	ClientCode uint
+	ClientCode uint `gorm:"not null"`
 
-	TrackNumbers []string
+	TrackNumbers []string `gorm:"type:jsonb;serializer:json;not null"`
 
 	Weight float64
 	Price  float64

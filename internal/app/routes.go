@@ -13,6 +13,7 @@ func registerRoutes(
 	router *gin.Engine,
 	authHandler *handler.AuthHandler,
 	parcelHandler *handler.ParcelHandler,
+	recordHandler *handler.RecordHandler,
 	tokenManager *security.TokenManager,
 ) {
 	router.GET("/health", func(c *gin.Context) {
@@ -40,5 +41,13 @@ func registerRoutes(
 		parcels.GET("/:track_number", parcelHandler.GetByTrackNumber)
 		parcels.POST("", parcelHandler.Create)
 		parcels.PUT("/status", parcelHandler.UpsertStatus)
+	}
+
+	records := router.Group("/records")
+	const recordsBodyLimit int64 = 64 * 1024
+	records.Use(middleware.BodyLimit(recordsBodyLimit))
+	records.Use(middleware.IsAuthenticated(tokenManager))
+	{
+		records.POST("", recordHandler.Create)
 	}
 }

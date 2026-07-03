@@ -34,7 +34,7 @@ func Run() error {
 		return err
 	}
 
-	if err := db.AutoMigrate(&domain.User{}, &domain.Parcel{}); err != nil {
+	if err := db.AutoMigrate(&domain.User{}, &domain.Parcel{}, &domain.Record{}); err != nil {
 		return fmt.Errorf("migrate adapters: %w", err)
 	}
 
@@ -55,6 +55,7 @@ func Run() error {
 
 	userRepo := repository.NewUserRepository(db)
 	parcelRepo := repository.NewParcelRepository(db)
+	recordRepo := repository.NewRecordRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(redisClient)
 
 	tokenManager := security.NewTokenManager(
@@ -70,14 +71,16 @@ func Run() error {
 		tokenManager,
 	)
 	parcelService := service.NewParcelService(parcelRepo)
+	recordService := service.NewRecordService(recordRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	parcelHandler := handler.NewParcelHandler(parcelService)
+	recordHandler := handler.NewRecordHandler(recordService)
 
 	router := gin.Default()
 	router.Use(middleware.CORS(cfg.CORSAllowedOrigins))
 
-	registerRoutes(router, authHandler, parcelHandler, tokenManager)
+	registerRoutes(router, authHandler, parcelHandler, recordHandler, tokenManager)
 
 	return router.Run(":" + cfg.HTTPPort)
 }

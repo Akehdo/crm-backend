@@ -18,6 +18,8 @@ const (
 	errorCodeUserAlreadyExists   = "USER_ALREADY_EXISTS"
 	errorCodeUserNotFound        = "USER_NOT_FOUND"
 	errorCodeParcelNotFound      = "PARCEL_NOT_FOUND"
+	errorCodeRecordAlreadyExists = "RECORD_ALREADY_EXISTS"
+	errorCodeRecordNotFound      = "RECORD_NOT_FOUND"
 	errorCodeInvalidRefreshToken = "INVALID_REFRESH_TOKEN"
 	errorCodeInternal            = "INTERNAL_ERROR"
 	errorCodeRequestTooLarge     = "REQUEST_TOO_LARGE"
@@ -104,6 +106,30 @@ func writeAppError(c *gin.Context, operation string, err error) {
 			http.StatusNotFound,
 			errorCodeParcelNotFound,
 			"parcel not found",
+		)
+
+	case errors.Is(err, app_errors.ErrInvalidRecord):
+		writeError(
+			c,
+			http.StatusBadRequest,
+			errorCodeInvalidRequest,
+			"invalid record",
+		)
+
+	case errors.Is(err, app_errors.ErrRecordAlreadyExists):
+		writeError(
+			c,
+			http.StatusConflict,
+			errorCodeRecordAlreadyExists,
+			"record already exists",
+		)
+
+	case errors.Is(err, app_errors.ErrRecordNotFound):
+		writeError(
+			c,
+			http.StatusNotFound,
+			errorCodeRecordNotFound,
+			"record not found",
 		)
 
 	default:
