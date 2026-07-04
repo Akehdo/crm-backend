@@ -43,26 +43,26 @@ model Parcel {
 }
 
 model Record {
-  id                  String               @id @default(uuid()) @db.Uuid
-  clientCode          BigInt               @map("client_code")
-  trackNumbers        Json                 @map("track_numbers") @db.JsonB
-  weight              Float
-  price               Float
-  paymentType         PaymentType          @map("payment_type")
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  financeTransactions FinanceTransaction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  clientCode   BigInt        @map("client_code")
+  trackNumbers Json          @map("track_numbers") @db.JsonB
+  weight       Float
+  price        Float
+  paymentType  PaymentType   @map("payment_type")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  transactions Transaction[]
 
   @@map("records")
 }
 
 model Expense {
-  id                  String               @id @default(uuid()) @db.Uuid
-  amount              Float
-  comment             String               @db.VarChar(255)
-  createdAt           DateTime             @default(now()) @map("created_at")
-  updatedAt           DateTime             @updatedAt @map("updated_at")
-  financeTransactions FinanceTransaction[]
+  id           String        @id @default(uuid()) @db.Uuid
+  amount       Float
+  comment      String        @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  transactions Transaction[]
 
   @@map("expenses")
 }
@@ -78,7 +78,7 @@ enum TransactionType {
   EXPENSE
 }
 
-model FinanceTransaction {
+model Transaction {
   id     String          @id @default(uuid()) @db.Uuid
   type   TransactionType
   method PaymentMethod
@@ -93,5 +93,5 @@ model FinanceTransaction {
   record  Record?  @relation(fields: [recordId], references: [id])
   expense Expense? @relation(fields: [expenseId], references: [id])
 
-  @@map("finance_transactions")
+  @@map("transactions")
 }
