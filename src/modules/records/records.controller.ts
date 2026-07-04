@@ -1,17 +1,21 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 
 import { AccessTokenGuard } from "../auth/guards/access-token.guard";
 import { Record as RecordModel } from "../../prisma/generated";
+import { createPaginationMeta } from "../../shared/pagination";
 import { CreateRecordDto } from "./dto/create-record.dto";
+import { ListRecordsDto } from "./dto/list-records.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
 import { RecordsService } from "./records.service";
 
@@ -32,6 +36,20 @@ export class RecordsController {
   async update(@Param("id") id: string, @Body() dto: UpdateRecordDto) {
     const record = await this.records.update(id, dto);
     return recordResponse(record);
+  }
+
+  @Get()
+  async list(@Query() dto: ListRecordsDto) {
+    const result = await this.records.list(
+      dto.payment_type,
+      dto.page,
+      dto.limit,
+    );
+
+    return {
+      items: result.items.map(recordResponse),
+      meta: createPaginationMeta(result.page, result.limit, result.total),
+    };
   }
 }
 
