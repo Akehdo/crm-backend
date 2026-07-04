@@ -1,0 +1,56 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ParcelStatus {
+  added
+  shipped
+  almaty
+  koksh
+}
+
+enum PaymentType {
+  kaspiQR
+  card
+  cash
+}
+
+model User {
+  id           BigInt   @id @default(autoincrement())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         String   @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Parcel {
+  id          BigInt       @id @default(autoincrement())
+  trackNumber String       @unique @map("track_number") @db.VarChar(255)
+  status      ParcelStatus @default(added)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("parcels")
+}
+
+model Record {
+  id           BigInt      @id @default(autoincrement())
+  clientCode   BigInt      @map("client_code")
+  trackNumbers Json        @map("track_numbers") @db.JsonB
+  weight       Float
+  price        Float
+  paymentType  PaymentType @map("payment_type")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("records")
+}

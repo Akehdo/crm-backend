@@ -5,12 +5,12 @@ services:
       dockerfile: Dockerfile
     container_name: crm_app
     environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-crm}?schema=public
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_NAME: ${DB_NAME:-crm}
-      DB_SSLMODE: ${DB_SSLMODE:-disable}
       REDIS_ADDR: redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
       REDIS_DB: ${REDIS_DB:-0}
@@ -28,7 +28,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:$${HTTP_PORT:-8080}/health | grep -q ok"]
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.HTTP_PORT || 8080) + '/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -80,7 +80,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-crm}
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -111,4 +110,3 @@ volumes:
   pg_data:
   redis_data:
   frontend_node_modules:
-

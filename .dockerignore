@@ -6,5 +6,7 @@ Dockerfile
 docker-compose.yml
 tmp
 bin
+node_modules
 dist
+coverage
 *.log

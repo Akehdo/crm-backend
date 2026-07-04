@@ -1,137 +1,76 @@
-## Быстрый старт
+## CRM Backend
 
-### 1. Поднять PostgreSQL и Redis
+NestJS + Prisma backend for the CRM project.
+
+### Stack
+
+- TypeScript
+- NestJS
+- Prisma
+- PostgreSQL
+- Redis
+- JWT access tokens + rotating refresh tokens
+
+### Modular layout
+
+```text
+src/
+  config/      env parsing
+  modules/
+    auth/      login/register/refresh/logout, JWT, refresh token storage
+    users/     user persistence
+    parcels/   parcel CRUD/status workflows
+    records/   record creation
+  generated/   generated Prisma Client
+  prisma/      Prisma client provider
+  redis/       Redis provider
+```
+
+### Quick start
+
+Create a local env file:
+
+```powershell
+Copy-Item .env.local.example .env
+```
+
+Or on Unix-like shells:
 
 ```bash
-docker compose up -d
+cp .env.local.example .env
 ```
 
-### 2. Настроить переменные окружения
-
-Создай локальный `.env` файл и укажи значения:
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=crm
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=crm
-DB_SSLMODE=disable
-
-REDIS_ADDR=localhost:6379
-REDIS_PASSWORD=
-REDIS_DB=0
-
-JWT_ACCESS_SECRET=local-access-secret-change-me
-JWT_REFRESH_SECRET=local-refresh-secret-change-me
-
-ACCESS_TTL=15m
-REFRESH_TTL=720h
-
-HTTP_PORT=8080
-```
-
-Для production-like окружения секреты JWT должны быть длинными, случайными и не должны храниться в репозитории.
-
-### 3. Запустить приложение
+Then run:
 
 ```bash
-go run ./cmd/app
+npm install
+npm run prisma:push
+npm run start:dev
 ```
 
-API будет доступен на:
+For Docker:
+
+```bash
+docker compose up --build
+```
+
+The API listens on:
 
 ```text
 http://localhost:8080
 ```
 
-## Endpoints
-
-### Health check
+### Endpoints
 
 ```http
 GET /health
-```
-
-Response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-### Register
-
-```http
 POST /auth/register
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-### Login
-
-```http
 POST /auth/login
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-Response:
-
-```json
-{
-  "access_token": "...",
-  "refresh_token": "..."
-}
-```
-
-### Refresh tokens
-
-```http
 POST /auth/refresh
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "refresh_token": "..."
-}
-```
-
-### Logout
-
-```http
 POST /auth/logout
-Content-Type: application/json
-```
-
-Request:
-
-```json
-{
-  "refresh_token": "..."
-}
+GET /parcels?page=1&limit=20&status=added
+GET /parcels/:track_number
+POST /parcels
+PUT /parcels/status
+POST /records
 ```

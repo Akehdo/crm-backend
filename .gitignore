@@ -7,27 +7,25 @@
 .env.*
 !.env.example
 
-# Go build artifacts
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.test
-*.out
+# Dependencies
+node_modules/
 
-# Project binaries / build output
+# Build output
 bin/
 build/
 dist/
 
-# Coverage
-coverage.out
-coverage.html
-*.cover
-*.coverage
+# Generated Prisma Client
+src/generated/
 
-# Go workspace / temporary files
+# Prisma local files
+prisma/dev.db
+prisma/dev.db-journal
+
+# Coverage
+coverage/
+
+# Temporary files
 tmp/
 .temp/
 .cache/
@@ -38,6 +36,3 @@ tmp/
 # OS files
 .DS_Store
 Thumbs.db
-
-# Air live reload, если будешь использовать
-.air.toml

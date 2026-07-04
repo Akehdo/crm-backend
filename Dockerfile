@@ -1,23 +1,34 @@
-FROM golang:1.26-alpine AS builder
-
-WORKDIR /src
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/crm-backend ./cmd/app
-
-FROM alpine:3.22
-
-RUN addgroup -S app && adduser -S app -G app
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-COPY --from=builder /out/crm-backend /app/crm-backend
+COPY package*.json ./
+RUN npm ci
 
-USER app
+FROM deps AS builder
+
+COPY tsconfig*.json nest-cli.json prisma.config.ts ./
+COPY prisma ./prisma
+COPY src ./src
+ARG DATABASE_URL=postgresql://postgres:postgres@postgres:5432/crm?schema=public
+ENV DATABASE_URL=$DATABASE_URL
+RUN npm run build
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY prisma.config.ts ./
+COPY prisma ./prisma
+COPY --from=builder /app/dist ./dist
+
+RUN chown -R node:node /app
+USER node
 
 EXPOSE 8080
 
-ENTRYPOINT ["/app/crm-backend"]
+CMD ["sh", "-c", "npx prisma db push && node dist/main.js"]
