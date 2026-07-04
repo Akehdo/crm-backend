@@ -67,22 +67,16 @@ model Expense {
   @@map("expenses")
 }
 
-enum PaymentMethod {
-  KASPI
-  CARD
-  CASH
-}
-
 enum TransactionType {
   INCOME
   EXPENSE
 }
 
 model Transaction {
-  id     String          @id @default(uuid()) @db.Uuid
-  type   TransactionType
-  method PaymentMethod
-  amount Int
+  id              String          @id @default(uuid()) @db.Uuid
+  transactionType TransactionType @map("transaction_type")
+  paymentType     PaymentType     @map("payment_type")
+  amount          Int
 
   recordId  String? @map("record_id")
   expenseId String? @map("expense_id")
