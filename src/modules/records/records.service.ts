@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { Prisma } from "../../prisma/generated";
+import { Prisma, Record as RecordModel } from "../../prisma/generated";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateRecordDto } from "./dto/create-record.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
@@ -13,7 +13,11 @@ import { PAYMENT_TYPES } from "./records.constants";
 export class RecordsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateRecordDto): Promise<void> {
+  async getAll(): Promise<RecordModel[]> {
+    return this.prisma.record.findMany();
+  }
+
+  async create(dto: CreateRecordDto): Promise<RecordModel> {
     const trackNumbers = normalizeTrackNumbers(dto.track_numbers);
 
     if (dto.client_code <= 0) {
@@ -33,7 +37,7 @@ export class RecordsService {
     }
 
     try {
-      await this.prisma.record.create({
+      return await this.prisma.record.create({
         data: {
           clientCode: BigInt(dto.client_code),
           paymentType: dto.payment_type,
@@ -51,7 +55,7 @@ export class RecordsService {
     }
   }
 
-  async update(id: string, dto: UpdateRecordDto): Promise<void> {
+  async update(id: string, dto: UpdateRecordDto): Promise<RecordModel> {
     const recordId = parseRecordId(id);
     const data = buildRecordUpdateData(dto);
 
@@ -60,7 +64,7 @@ export class RecordsService {
     }
 
     try {
-      await this.prisma.record.update({
+      return await this.prisma.record.update({
         data,
         where: { id: recordId },
       });

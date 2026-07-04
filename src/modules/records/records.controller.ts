@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { AccessTokenGuard } from "../auth/guards/access-token.guard";
+import { Record as RecordModel } from "../../prisma/generated";
 import { CreateRecordDto } from "./dto/create-record.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
 import { RecordsService } from "./records.service";
@@ -22,14 +23,35 @@ export class RecordsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() dto: CreateRecordDto) {
-    await this.records.create(dto);
-    return { message: "record created successfully" };
+    const record = await this.records.create(dto);
+    return recordResponse(record);
   }
 
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
   async update(@Param("id") id: string, @Body() dto: UpdateRecordDto) {
-    await this.records.update(id, dto);
-    return { message: "record updated successfully" };
+    const record = await this.records.update(id, dto);
+    return recordResponse(record);
   }
+}
+
+function recordResponse(record: RecordModel) {
+  return {
+    id: record.id,
+    client_code: Number(record.clientCode),
+    track_numbers: trackNumbersResponse(record.trackNumbers),
+    weight: record.weight,
+    price: record.price,
+    payment_type: record.paymentType,
+    created_at: record.createdAt,
+    updated_at: record.updatedAt,
+  };
+}
+
+function trackNumbersResponse(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string");
 }

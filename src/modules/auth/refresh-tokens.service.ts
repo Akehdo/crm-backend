@@ -19,18 +19,20 @@ export class RefreshTokensService {
     return value;
   }
 
-  async delete(tokenHash: string): Promise<void> {
-    await this.redis.getClient().del(this.key(tokenHash));
+  async delete(tokenHash: string): Promise<number> {
+    return this.redis.getClient().del(this.key(tokenHash));
   }
 
   async save(
     tokenHash: string,
     userId: string,
     ttlSeconds: number,
-  ): Promise<void> {
-    await this.redis
+  ): Promise<boolean> {
+    const result = await this.redis
       .getClient()
       .set(this.key(tokenHash), userId, "EX", ttlSeconds);
+
+    return result === "OK";
   }
 
   private key(tokenHash: string): string {

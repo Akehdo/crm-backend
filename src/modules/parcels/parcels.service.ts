@@ -1,22 +1,24 @@
 import { Injectable } from "@nestjs/common";
 
+import { Parcel } from "../../prisma/generated";
 import { PrismaService } from "../../prisma/prisma.service";
 import { InvalidParcelRequestException } from "./exceptions/invalid-parcel-request.exception";
 import { ParcelNotFoundException } from "./exceptions/parcel-not-found.exception";
 import { ParcelStatus, ParcelStatusEnum } from "./parcels.constants";
 import { createPaginationParams } from "./parcels.pagination";
+import { CreateParcelsResult, ListParcelsResult } from "./types/parcel-types";
 
 @Injectable()
 export class ParcelsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(trackNumbers: string[]): Promise<void> {
+  async create(trackNumbers: string[]): Promise<CreateParcelsResult> {
     const normalized = normalizeTrackNumbers(trackNumbers);
     if (normalized.length === 0) {
       throw new InvalidParcelRequestException("track numbers are required");
     }
 
-    await this.prisma.parcel.createMany({
+    return this.prisma.parcel.createMany({
       data: normalized.map((trackNumber) => ({
         status: ParcelStatusEnum.added,
         trackNumber,
@@ -25,7 +27,7 @@ export class ParcelsService {
     });
   }
 
-  async getByTrackNumber(trackNumber: string) {
+  async getByTrackNumber(trackNumber: string): Promise<Parcel> {
     const parcel = await this.prisma.parcel.findUnique({
       where: { trackNumber: trackNumber.trim() },
     });
@@ -37,7 +39,11 @@ export class ParcelsService {
     return parcel;
   }
 
-  async list(status?: ParcelStatus, page?: number, limit?: number) {
+  async list(
+    status?: ParcelStatus,
+    page?: number,
+    limit?: number,
+  ): Promise<ListParcelsResult> {
     const params = createPaginationParams(page, limit);
     const where = status ? { status } : {};
 
@@ -62,13 +68,13 @@ export class ParcelsService {
   async upsertStatus(
     trackNumbers: string[],
     status: ParcelStatus,
-  ): Promise<void> {
+  ): Promise<Parcel[]> {
     const normalized = normalizeTrackNumbers(trackNumbers);
     if (normalized.length === 0) {
       throw new InvalidParcelRequestException("track numbers are required");
     }
 
-    await this.prisma.$transaction(
+    return this.prisma.$transaction(
       normalized.map((trackNumber) =>
         this.prisma.parcel.upsert({
           create: {

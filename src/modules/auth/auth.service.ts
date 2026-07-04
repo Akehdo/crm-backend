@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 
+import { User } from "../../prisma/generated";
 import { UsersService } from "../users/users.service";
 import { UserAlreadyExistsException } from "../users/exceptions/user-already-exists.exception";
 import { UserNotFoundException } from "../users/exceptions/user-not-found.exception";
@@ -8,11 +9,7 @@ import { InvalidCredentialsException } from "./exceptions/invalid-credentials.ex
 import { InvalidRefreshTokenException } from "./exceptions/invalid-refresh-token.exception";
 import { RefreshTokensService } from "./refresh-tokens.service";
 import { TokenService } from "./token.service";
-
-type TokenPair = {
-  access_token: string;
-  refresh_token: string;
-};
+import { TokenPair } from "./types/auth-types";
 
 @Injectable()
 export class AuthService {
@@ -43,14 +40,16 @@ export class AuthService {
     }
   }
 
-  async logout(refreshToken: string): Promise<void> {
+  async logout(refreshToken: string): Promise<boolean> {
     if (!refreshToken) {
-      return;
+      return false;
     }
 
-    await this.refreshTokens.delete(
+    const deletedCount = await this.refreshTokens.delete(
       this.tokenService.hashRefreshToken(refreshToken),
     );
+
+    return deletedCount > 0;
   }
 
   async refresh(oldRefreshToken: string): Promise<TokenPair> {
@@ -73,7 +72,7 @@ export class AuthService {
     }
   }
 
-  async register(email: string, password: string): Promise<void> {
+  async register(email: string, password: string): Promise<User> {
     const normalizedEmail = normalizeEmail(email);
 
     if (await this.users.existsByEmail(normalizedEmail)) {
@@ -81,7 +80,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    await this.users.create(normalizedEmail, passwordHash, "user");
+    return this.users.create(normalizedEmail, passwordHash, "user");
   }
 
   private async issueTokens(userId: string, role: string): Promise<TokenPair> {
