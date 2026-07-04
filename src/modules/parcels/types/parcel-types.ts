@@ -1,4 +1,4 @@
-import { Parcel } from "@prisma/client";
+import { Parcel } from "../../../prisma/generated";
 
 export type CreateParcelsResult = {
   count: number;
