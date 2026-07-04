@@ -54,6 +54,14 @@ For Docker:
 docker compose up --build
 ```
 
+If you already started the old auto-increment ID schema locally, PostgreSQL may need a fresh
+dev volume before applying the UUID primary key schema:
+
+```bash
+docker compose down -v
+docker compose up --build
+```
+
 The API listens on:
 
 ```text
@@ -73,4 +81,5 @@ GET /parcels/:track_number
 POST /parcels
 PUT /parcels/status
 POST /records
+PATCH /records/:id
 ```
