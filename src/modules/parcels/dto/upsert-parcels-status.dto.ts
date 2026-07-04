@@ -1,12 +1,12 @@
 import {
   ArrayMinSize,
   IsArray,
-  IsIn,
+  IsEnum,
   IsNotEmpty,
   IsString,
 } from "class-validator";
 
-import { PARCEL_STATUSES, ParcelStatus } from "../parcels.constants";
+import { ParcelStatus } from "../../../prisma/generated";
 
 export class UpsertParcelsStatusDto {
   @IsArray({ message: "invalid value" })
@@ -15,6 +15,6 @@ export class UpsertParcelsStatusDto {
   @IsNotEmpty({ each: true, message: "field is required" })
   track_numbers!: string[];
 
-  @IsIn(PARCEL_STATUSES, { message: "invalid value" })
+  @IsEnum(ParcelStatus, { message: "invalid value" })
   status!: ParcelStatus;
 }

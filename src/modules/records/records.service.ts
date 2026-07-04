@@ -1,20 +1,47 @@
 import { Injectable } from "@nestjs/common";
 
-import { Prisma, Record as RecordModel } from "../../prisma/generated";
+import {
+  PaymentType,
+  Prisma,
+  Record as RecordModel,
+} from "../../prisma/generated";
+import { createPaginationParams } from "../../shared/pagination";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateRecordDto } from "./dto/create-record.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
 import { InvalidRecordException } from "./exceptions/invalid-record.exception";
 import { RecordAlreadyExistsException } from "./exceptions/record-already-exists.exception";
 import { RecordNotFoundException } from "./exceptions/record-not-found.exception";
-import { PAYMENT_TYPES } from "./records.constants";
+import { ListRecordsResult } from "./types/records.types";
 
 @Injectable()
 export class RecordsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAll(): Promise<RecordModel[]> {
-    return this.prisma.record.findMany();
+  async list(
+    paymentType?: PaymentType,
+    page?: number,
+    limit?: number,
+  ): Promise<ListRecordsResult> {
+    const params = createPaginationParams(page, limit);
+    const where: Prisma.RecordWhereInput = paymentType ? { paymentType } : {};
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.record.findMany({
+        orderBy: { createdAt: "desc" },
+        skip: params.offset,
+        take: params.limit,
+        where,
+      }),
+      this.prisma.record.count({ where }),
+    ]);
+
+    return {
+      items,
+      limit: params.limit,
+      page: params.page,
+      total,
+    };
   }
 
   async create(dto: CreateRecordDto): Promise<RecordModel> {
@@ -30,10 +57,6 @@ export class RecordsService {
 
     if (dto.price <= 0 || dto.weight <= 0) {
       throw new InvalidRecordException("price and weight must be positive");
-    }
-
-    if (!PAYMENT_TYPES.includes(dto.payment_type)) {
-      throw new InvalidRecordException("invalid payment type");
     }
 
     try {
@@ -136,10 +159,6 @@ function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
   }
 
   if (dto.payment_type !== undefined) {
-    if (!PAYMENT_TYPES.includes(dto.payment_type)) {
-      throw new InvalidRecordException("invalid payment type");
-    }
-
     data.paymentType = dto.payment_type;
   }
 

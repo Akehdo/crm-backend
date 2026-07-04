@@ -1,10 +1,9 @@
 import { Injectable } from "@nestjs/common";
 
-import { Parcel } from "../../prisma/generated";
+import { Parcel, ParcelStatus } from "../../prisma/generated";
 import { PrismaService } from "../../prisma/prisma.service";
 import { InvalidParcelRequestException } from "./exceptions/invalid-parcel-request.exception";
 import { ParcelNotFoundException } from "./exceptions/parcel-not-found.exception";
-import { ParcelStatus, ParcelStatusEnum } from "./parcels.constants";
 import { CreateParcelsResult, ListParcelsResult } from "./types/parcel-types";
 import { createPaginationParams } from "../../shared/pagination";
 
@@ -20,7 +19,7 @@ export class ParcelsService {
 
     return this.prisma.parcel.createMany({
       data: normalized.map((trackNumber) => ({
-        status: ParcelStatusEnum.added,
+        status: ParcelStatus.added,
         trackNumber,
       })),
       skipDuplicates: true,

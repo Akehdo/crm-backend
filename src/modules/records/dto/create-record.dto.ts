@@ -2,7 +2,7 @@ import { Type } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
-  IsIn,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -10,7 +10,7 @@ import {
   Min,
 } from "class-validator";
 
-import { PAYMENT_TYPES, PaymentType } from "../records.constants";
+import { PaymentType } from "../../../prisma/generated";
 
 export class CreateRecordDto {
   @Type(() => Number)
@@ -34,6 +34,6 @@ export class CreateRecordDto {
   @Min(0.0000001, { message: "invalid value" })
   price!: number;
 
-  @IsIn(PAYMENT_TYPES, { message: "invalid value" })
+  @IsEnum(PaymentType, { message: "invalid value" })
   payment_type!: PaymentType;
 }

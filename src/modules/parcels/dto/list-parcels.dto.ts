@@ -1,11 +1,11 @@
 import { Type } from "class-transformer";
-import { IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
+import { IsEnum, IsInt, IsOptional, Max, Min } from "class-validator";
 
-import { PARCEL_STATUSES, ParcelStatus } from "../parcels.constants";
+import { ParcelStatus } from "../../../prisma/generated";
 
 export class ListParcelsDto {
   @IsOptional()
-  @IsIn(PARCEL_STATUSES, { message: "invalid value" })
+  @IsEnum(ParcelStatus, { message: "invalid value" })
   status?: ParcelStatus;
 
   @IsOptional()
