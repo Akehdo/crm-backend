@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -50,6 +51,13 @@ export class RecordsController {
       items: result.items.map(recordResponse),
       meta: createPaginationMeta(result.page, result.limit, result.total),
     };
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  async delete(@Param("id") id: string) {
+    const record = await this.records.delete(id);
+    return recordResponse(record);
   }
 }
 

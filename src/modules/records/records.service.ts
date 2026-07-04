@@ -103,6 +103,22 @@ export class RecordsService {
       throw error;
     }
   }
+
+  async delete(id: string): Promise<RecordModel> {
+    const recordId = parseRecordId(id);
+
+    try {
+      return await this.prisma.record.delete({
+        where: { id: recordId },
+      });
+    } catch (error) {
+      if (isRecordNotFoundError(error)) {
+        throw new RecordNotFoundException();
+      }
+
+      throw error;
+    }
+  }
 }
 
 function normalizeTrackNumbers(trackNumbers: string[]): string[] {
