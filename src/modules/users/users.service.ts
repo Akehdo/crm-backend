@@ -51,7 +51,7 @@ export class UsersService {
     return user;
   }
 
-  async findById(id: bigint): Promise<User> {
+  async findById(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
     });

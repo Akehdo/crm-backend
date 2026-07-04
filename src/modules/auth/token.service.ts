@@ -7,7 +7,7 @@ import { parseDurationToSeconds } from "../../config/configuration";
 
 export type AccessTokenClaims = {
   role: string;
-  userId: bigint;
+  userId: string;
 };
 
 @Injectable()
@@ -37,14 +37,14 @@ export class TokenService {
     }
   }
 
-  async generateAccessToken(userId: bigint, role: string): Promise<string> {
+  async generateAccessToken(userId: string, role: string): Promise<string> {
     return this.jwt.signAsync(
       { role },
       {
         algorithm: "HS256",
         expiresIn: this.accessTtlSeconds,
         secret: this.accessSecret,
-        subject: userId.toString(),
+        subject: userId,
       },
     );
   }
@@ -74,14 +74,19 @@ export class TokenService {
       throw new Error("invalid token payload");
     }
 
-    const userId = BigInt(payload.sub);
-    if (userId <= 0n) {
+    if (!isUuid(payload.sub)) {
       throw new Error("invalid token subject");
     }
 
     return {
       role: payload.role,
-      userId,
+      userId: payload.sub,
     };
   }
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }

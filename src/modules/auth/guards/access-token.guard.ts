@@ -11,7 +11,7 @@ export type AuthenticatedRequest = {
   headers: Record<string, string | string[] | undefined>;
   user?: {
     role: string;
-    userId: bigint;
+    userId: string;
   };
 };
 

@@ -7,7 +7,7 @@ import { InvalidRefreshTokenException } from "./exceptions/invalid-refresh-token
 export class RefreshTokensService {
   constructor(private readonly redis: RedisService) {}
 
-  async consume(tokenHash: string): Promise<bigint> {
+  async consume(tokenHash: string): Promise<string> {
     const value = await this.redis
       .getClient()
       .call("GETDEL", this.key(tokenHash));
@@ -16,7 +16,7 @@ export class RefreshTokensService {
       throw new InvalidRefreshTokenException();
     }
 
-    return BigInt(value);
+    return value;
   }
 
   async delete(tokenHash: string): Promise<void> {
@@ -25,12 +25,12 @@ export class RefreshTokensService {
 
   async save(
     tokenHash: string,
-    userId: bigint,
+    userId: string,
     ttlSeconds: number,
   ): Promise<void> {
     await this.redis
       .getClient()
-      .set(this.key(tokenHash), userId.toString(), "EX", ttlSeconds);
+      .set(this.key(tokenHash), userId, "EX", ttlSeconds);
   }
 
   private key(tokenHash: string): string {

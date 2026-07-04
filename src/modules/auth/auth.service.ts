@@ -84,7 +84,7 @@ export class AuthService {
     await this.users.create(normalizedEmail, passwordHash, "user");
   }
 
-  private async issueTokens(userId: bigint, role: string): Promise<TokenPair> {
+  private async issueTokens(userId: string, role: string): Promise<TokenPair> {
     const accessToken = await this.tokenService.generateAccessToken(
       userId,
       role,

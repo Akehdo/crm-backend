@@ -57,7 +57,7 @@ export class ParcelsController {
 function parcelResponse(parcel: Parcel) {
   return {
     created_at: parcel.createdAt,
-    id: Number(parcel.id),
+    id: parcel.id,
     status: parcel.status,
     track_number: parcel.trackNumber,
     updated_at: parcel.updatedAt,
