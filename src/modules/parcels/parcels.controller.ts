@@ -16,8 +16,8 @@ import { AccessTokenGuard } from "../auth/guards/access-token.guard";
 import { CreateParcelsDto } from "./dto/create-parcels.dto";
 import { ListParcelsDto } from "./dto/list-parcels.dto";
 import { UpsertParcelsStatusDto } from "./dto/upsert-parcels-status.dto";
-import { createPaginationMeta } from "./parcels.pagination";
 import { ParcelsService } from "./parcels.service";
+import { createPaginationMeta } from "../../shared/pagination";
 
 @Controller("parcels")
 @UseGuards(AccessTokenGuard)

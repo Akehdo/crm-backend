@@ -5,8 +5,8 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { InvalidParcelRequestException } from "./exceptions/invalid-parcel-request.exception";
 import { ParcelNotFoundException } from "./exceptions/parcel-not-found.exception";
 import { ParcelStatus, ParcelStatusEnum } from "./parcels.constants";
-import { createPaginationParams } from "./parcels.pagination";
 import { CreateParcelsResult, ListParcelsResult } from "./types/parcel-types";
+import { createPaginationParams } from "../../shared/pagination";
 
 @Injectable()
 export class ParcelsService {
