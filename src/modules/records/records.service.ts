@@ -7,12 +7,14 @@ import {
   TransactionType,
 } from "../../prisma/generated";
 import { createPaginationParams } from "../../shared/pagination";
+import { toMoneyNumber } from "../../shared/money";
 import { PrismaService } from "../../prisma/prisma.service";
-import { CreateRecordDto, RecordPaymentDto } from "./dto/create-record.dto";
+import { CreateRecordDto } from "./dto/create-record.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
 import { InvalidRecordException } from "./exceptions/invalid-record.exception";
 import { RecordAlreadyExistsException } from "./exceptions/record-already-exists.exception";
 import { RecordNotFoundException } from "./exceptions/record-not-found.exception";
+import { buildRecordPayments } from "./records.payments";
 import { ListRecordsResult } from "./types/records.types";
 
 @Injectable()
@@ -130,7 +132,10 @@ export class RecordsService {
       throw new RecordNotFoundException();
     }
 
-    const data = buildRecordUpdateData(dto, currentRecord?.price);
+    const data = buildRecordUpdateData(
+      dto,
+      currentRecord ? toMoneyNumber(currentRecord.price) : undefined,
+    );
 
     if (Object.keys(data).length === 0) {
       throw new InvalidRecordException("at least one field is required");
@@ -164,9 +169,16 @@ export class RecordsService {
     const recordId = parseRecordId(id);
 
     try {
-      return await this.prisma.record.delete({
-        where: { id: recordId },
-      });
+      const [, record] = await this.prisma.$transaction([
+        this.prisma.transaction.deleteMany({
+          where: { recordId },
+        }),
+        this.prisma.record.delete({
+          where: { id: recordId },
+        }),
+      ]);
+
+      return record;
     } catch (error) {
       if (isRecordNotFoundError(error)) {
         throw new RecordNotFoundException();
@@ -277,59 +289,6 @@ function buildRecordUpdateData(
   }
 
   return data;
-}
-
-type BuildRecordPaymentsOptions = {
-  fallbackPaymentType?: PaymentType;
-};
-
-function buildRecordPayments(
-  payments: RecordPaymentDto[] | undefined,
-  price: number | undefined,
-  options: BuildRecordPaymentsOptions = {},
-): RecordPaymentDto[] {
-  if (price === undefined || price <= 0) {
-    throw new InvalidRecordException("price must be positive");
-  }
-
-  if (!payments || payments.length === 0) {
-    if (!options.fallbackPaymentType) {
-      throw new InvalidRecordException("payments are required");
-    }
-
-    return [{ amount: price, payment_type: options.fallbackPaymentType }];
-  }
-
-  const seenPaymentTypes = new Set<PaymentType>();
-  const normalizedPayments: RecordPaymentDto[] = [];
-
-  for (const payment of payments) {
-    if (payment.amount <= 0) {
-      throw new InvalidRecordException("payment amount must be positive");
-    }
-
-    if (seenPaymentTypes.has(payment.payment_type)) {
-      throw new InvalidRecordException("duplicate payment type");
-    }
-
-    seenPaymentTypes.add(payment.payment_type);
-    normalizedPayments.push(payment);
-  }
-
-  const total = normalizedPayments.reduce(
-    (sum, payment) => sum + payment.amount,
-    0,
-  );
-
-  if (!isSameAmount(total, price)) {
-    throw new InvalidRecordException("payments total must equal price");
-  }
-
-  return normalizedPayments;
-}
-
-function isSameAmount(left: number, right: number): boolean {
-  return Math.abs(left - right) < 0.000001;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
