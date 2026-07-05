@@ -76,7 +76,7 @@ model Transaction {
   id              String          @id @default(uuid()) @db.Uuid
   transactionType TransactionType @map("transaction_type")
   paymentType     PaymentType     @map("payment_type")
-  amount          Int
+  amount          Float
 
   recordId  String? @map("record_id") @db.Uuid
   expenseId String? @map("expense_id") @db.Uuid
