@@ -1,6 +1,11 @@
-import { Injectable } from "@nestjs/common";
+ import { Injectable } from "@nestjs/common";
 
-import { Expense, Prisma } from "../../prisma/generated";
+import {
+  Expense,
+  PaymentType,
+  Prisma,
+  TransactionType,
+} from "../../prisma/generated";
 import { PrismaService } from "../../prisma/prisma.service";
 import { createPaginationParams } from "../../shared/pagination";
 import { CreateExpenseDto } from "./dto/create-expense.dto";
@@ -22,10 +27,20 @@ export class ExpensesService {
       throw new InvalidExpenseException("comment cannot be empty");
     }
 
+    const paymentType = dto.payment_type ?? PaymentType.cash;
+
     return this.prisma.expense.create({
       data: {
         amount: dto.amount,
         comment: normalizeComment(dto.comment),
+        paymentType,
+        transactions: {
+          create: {
+            amount: dto.amount,
+            paymentType,
+            transactionType: TransactionType.EXPENSE,
+          },
+        },
       },
     });
   }
@@ -102,8 +117,33 @@ function buildExpenseUpdateData(
     data.amount = dto.amount;
   }
 
+  if (dto.payment_type !== undefined) {
+    data.paymentType = dto.payment_type;
+  }
+
   if (dto.comment !== undefined) {
     data.comment = normalizeComment(dto.comment);
+  }
+
+  const transactionData: Prisma.TransactionUpdateManyMutationInput = {};
+
+  if (dto.amount !== undefined) {
+    transactionData.amount = dto.amount;
+  }
+
+  if (dto.payment_type !== undefined) {
+    transactionData.paymentType = dto.payment_type;
+  }
+
+  if (Object.keys(transactionData).length > 0) {
+    data.transactions = {
+      updateMany: {
+        data: transactionData,
+        where: {
+          transactionType: TransactionType.EXPENSE,
+        },
+      },
+    };
   }
 
   return data;

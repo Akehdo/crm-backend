@@ -63,6 +63,7 @@ function expenseResponse(expense: Expense) {
     comment: expense.comment,
     created_at: expense.createdAt,
     id: expense.id,
+    payment_type: expense.paymentType,
     updated_at: expense.updatedAt,
   };
 }
