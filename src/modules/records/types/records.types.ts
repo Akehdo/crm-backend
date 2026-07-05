@@ -1,7 +1,4 @@
-import {
-  Record as RecordModel,
-  Transaction,
-} from "../../../prisma/generated";
+import { Record as RecordModel, Transaction } from "../../../prisma/generated";
 
 export type RecordWithTransactions = RecordModel & {
   transactions?: Transaction[];
