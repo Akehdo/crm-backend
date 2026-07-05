@@ -23,6 +23,7 @@ export class TransactionsController {
     return {
       items: result.items.map(transactionResponse),
       meta: createPaginationMeta(result.page, result.limit, result.total),
+      summary: result.summary,
     };
   }
 }
