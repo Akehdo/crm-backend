@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import {
   IsEnum,
-  IsInt,
+  IsNumber,
   IsOptional,
   IsUUID,
   Min,
@@ -18,8 +18,8 @@ export class CreateTransactionDto {
   payment_type!: PaymentType;
 
   @Type(() => Number)
-  @IsInt({ message: "invalid value" })
-  @Min(1, { message: "invalid value" })
+  @IsNumber({}, { message: "invalid value" })
+  @Min(0.0000001, { message: "invalid value" })
   amount!: number;
 
   @IsOptional()
