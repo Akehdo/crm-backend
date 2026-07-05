@@ -17,7 +17,7 @@ NestJS + Prisma backend for the CRM project.
 src/
   config/      env parsing
   modules/
-    auth/      login/register/refresh/logout, JWT, refresh token storage
+    auth/      login/refresh/logout, JWT, refresh token storage
     users/     user persistence
     parcels/   parcel CRUD/status workflows
     records/   record creation
@@ -44,9 +44,33 @@ Then run:
 
 ```bash
 npm install
-npm run prisma:push
+npm run db:setup
 npm run start:dev
 ```
+
+`db:setup` applies Prisma migrations and seeds the login user from:
+
+```text
+SEED_ADMIN_EMAIL
+SEED_ADMIN_PASSWORD
+SEED_ADMIN_ROLE
+SEED_ADMIN_OVERWRITE
+```
+
+Change `SEED_ADMIN_PASSWORD` before running Docker on a server. Existing users are not
+updated by seed unless `SEED_ADMIN_OVERWRITE=true`, so a container restart will not
+silently reset the admin password.
+
+For existing databases that were created with `prisma db push` before migrations were
+added, mark the first migration as already applied after verifying the schema:
+
+```bash
+npx prisma migrate resolve --applied 20260705110423_first_migration
+npx prisma migrate deploy
+```
+
+For migration diff checks against migration history, create a separate local shadow
+database and set `SHADOW_DATABASE_URL`.
 
 For Docker:
 
@@ -72,7 +96,6 @@ http://localhost:8080
 
 ```http
 GET /health
-POST /auth/register
 POST /auth/login
 POST /auth/refresh
 POST /auth/logout
