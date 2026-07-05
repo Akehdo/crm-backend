@@ -4,6 +4,7 @@ import {
   PaymentType,
   Prisma,
   Record as RecordModel,
+  TransactionType,
 } from "../../prisma/generated";
 import { createPaginationParams } from "../../shared/pagination";
 import { PrismaService } from "../../prisma/prisma.service";
@@ -66,6 +67,13 @@ export class RecordsService {
           paymentType: dto.payment_type,
           price: dto.price,
           trackNumbers,
+          transactions: {
+            create: {
+              amount: dto.price,
+              paymentType: dto.payment_type,
+              transactionType: TransactionType.INCOME,
+            },
+          },
           weight: dto.weight,
         },
       });
