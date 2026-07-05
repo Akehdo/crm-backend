@@ -1,4 +1,4 @@
- import { Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import {
   Expense,
@@ -91,9 +91,16 @@ export class ExpensesService {
     const expenseId = parseExpenseId(id);
 
     try {
-      return await this.prisma.expense.delete({
-        where: { id: expenseId },
-      });
+      const [, expense] = await this.prisma.$transaction([
+        this.prisma.transaction.deleteMany({
+          where: { expenseId },
+        }),
+        this.prisma.expense.delete({
+          where: { id: expenseId },
+        }),
+      ]);
+
+      return expense;
     } catch (error) {
       if (isRecordNotFoundError(error)) {
         throw new ExpenseNotFoundException();
