@@ -5,11 +5,15 @@
   "type": "commonjs",
   "scripts": {
     "build": "prisma generate && tsc -p tsconfig.build.json",
+    "db:setup": "prisma migrate deploy && npm run seed",
     "format": "prettier --write \"src/**/*.ts\" && prisma format",
     "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
     "prisma:push": "prisma db push",
+    "seed": "prisma generate && ts-node -r tsconfig-paths/register src/prisma/seed.ts",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
+    "test": "npm run typecheck && node --test -r ./test/generated-ts-resolver.js -r ts-node/register -r tsconfig-paths/register src/**/*.spec.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
