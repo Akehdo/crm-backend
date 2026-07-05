@@ -78,8 +78,8 @@ model Transaction {
   paymentType     PaymentType     @map("payment_type")
   amount          Int
 
-  recordId  String? @map("record_id")
-  expenseId String? @map("expense_id")
+  recordId  String? @map("record_id") @db.Uuid
+  expenseId String? @map("expense_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -87,5 +87,8 @@ model Transaction {
   record  Record?  @relation(fields: [recordId], references: [id])
   expense Expense? @relation(fields: [expenseId], references: [id])
 
+  @@index([transactionType])
+  @@index([paymentType])
+  @@index([createdAt])
   @@map("transactions")
 }

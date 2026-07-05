@@ -9,6 +9,7 @@ import { RecordsModule } from "./modules/records/records.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RedisModule } from "./redis/redis.module";
 import { ExpensesModule } from "./modules/expenses/expenses.module";
+import { TransactionsModule } from "./modules/transactions/transactions.module";
 
 @Module({
   controllers: [HealthController],
@@ -23,6 +24,7 @@ import { ExpensesModule } from "./modules/expenses/expenses.module";
     ParcelsModule,
     RecordsModule,
     ExpensesModule,
+    TransactionsModule,
   ],
 })
 export class AppModule {}
