@@ -186,6 +186,27 @@ function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
     data.paymentType = dto.payment_type;
   }
 
+  const transactionData: Prisma.TransactionUpdateManyMutationInput = {};
+
+  if (dto.price !== undefined) {
+    transactionData.amount = dto.price;
+  }
+
+  if (dto.payment_type !== undefined) {
+    transactionData.paymentType = dto.payment_type;
+  }
+
+  if (Object.keys(transactionData).length > 0) {
+    data.transactions = {
+      updateMany: {
+        data: transactionData,
+        where: {
+          transactionType: TransactionType.INCOME,
+        },
+      },
+    };
+  }
+
   return data;
 }
 
