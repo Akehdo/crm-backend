@@ -9,9 +9,11 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateNested,
 } from "class-validator";
 
 import { PaymentType } from "../../../prisma/generated";
+import { RecordPaymentDto } from "./create-record.dto";
 
 export class UpdateRecordDto {
   @IsOptional()
@@ -42,4 +44,11 @@ export class UpdateRecordDto {
   @IsOptional()
   @IsEnum(PaymentType, { message: "invalid value" })
   payment_type?: PaymentType;
+
+  @IsOptional()
+  @IsArray({ message: "invalid value" })
+  @ArrayMinSize(1, { message: "invalid value" })
+  @ValidateNested({ each: true })
+  @Type(() => RecordPaymentDto)
+  payments?: RecordPaymentDto[];
 }

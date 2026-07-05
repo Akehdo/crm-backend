@@ -8,7 +8,7 @@ import {
 } from "../../prisma/generated";
 import { createPaginationParams } from "../../shared/pagination";
 import { PrismaService } from "../../prisma/prisma.service";
-import { CreateRecordDto } from "./dto/create-record.dto";
+import { CreateRecordDto, RecordPaymentDto } from "./dto/create-record.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
 import { InvalidRecordException } from "./exceptions/invalid-record.exception";
 import { RecordAlreadyExistsException } from "./exceptions/record-already-exists.exception";
@@ -25,10 +25,30 @@ export class RecordsService {
     limit?: number,
   ): Promise<ListRecordsResult> {
     const params = createPaginationParams(page, limit);
-    const where: Prisma.RecordWhereInput = paymentType ? { paymentType } : {};
+    const where: Prisma.RecordWhereInput = paymentType
+      ? {
+          OR: [
+            { paymentType },
+            {
+              transactions: {
+                some: {
+                  paymentType,
+                  transactionType: TransactionType.INCOME,
+                },
+              },
+            },
+          ],
+        }
+      : {};
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.record.findMany({
+        include: {
+          transactions: {
+            orderBy: { createdAt: "asc" },
+            where: { transactionType: TransactionType.INCOME },
+          },
+        },
         orderBy: { createdAt: "desc" },
         skip: params.offset,
         take: params.limit,
@@ -60,21 +80,31 @@ export class RecordsService {
       throw new InvalidRecordException("price and weight must be positive");
     }
 
+    const payments = buildRecordPayments(dto.payments, dto.price, {
+      fallbackPaymentType: dto.payment_type,
+    });
+
     try {
       return await this.prisma.record.create({
         data: {
           clientCode: BigInt(dto.client_code),
-          paymentType: dto.payment_type,
+          paymentType: payments[0].payment_type,
           price: dto.price,
           trackNumbers,
           transactions: {
-            create: {
-              amount: dto.price,
-              paymentType: dto.payment_type,
+            create: payments.map((payment) => ({
+              amount: payment.amount,
+              paymentType: payment.payment_type,
               transactionType: TransactionType.INCOME,
-            },
+            })),
           },
           weight: dto.weight,
+        },
+        include: {
+          transactions: {
+            orderBy: { createdAt: "asc" },
+            where: { transactionType: TransactionType.INCOME },
+          },
         },
       });
     } catch (error) {
@@ -88,7 +118,19 @@ export class RecordsService {
 
   async update(id: string, dto: UpdateRecordDto): Promise<RecordModel> {
     const recordId = parseRecordId(id);
-    const data = buildRecordUpdateData(dto);
+    const currentRecord =
+      dto.payments !== undefined && dto.price === undefined
+        ? await this.prisma.record.findUnique({
+            select: { price: true },
+            where: { id: recordId },
+          })
+        : undefined;
+
+    if (currentRecord === null) {
+      throw new RecordNotFoundException();
+    }
+
+    const data = buildRecordUpdateData(dto, currentRecord?.price);
 
     if (Object.keys(data).length === 0) {
       throw new InvalidRecordException("at least one field is required");
@@ -97,6 +139,12 @@ export class RecordsService {
     try {
       return await this.prisma.record.update({
         data,
+        include: {
+          transactions: {
+            orderBy: { createdAt: "asc" },
+            where: { transactionType: TransactionType.INCOME },
+          },
+        },
         where: { id: recordId },
       });
     } catch (error) {
@@ -146,7 +194,10 @@ function normalizeTrackNumbers(trackNumbers: string[]): string[] {
   return result;
 }
 
-function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
+function buildRecordUpdateData(
+  dto: UpdateRecordDto,
+  currentPrice?: number,
+): Prisma.RecordUpdateInput {
   const data: Prisma.RecordUpdateInput = {};
 
   if (dto.client_code !== undefined) {
@@ -182,7 +233,14 @@ function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
     data.price = dto.price;
   }
 
-  if (dto.payment_type !== undefined) {
+  const payments =
+    dto.payments !== undefined
+      ? buildRecordPayments(dto.payments, dto.price ?? currentPrice)
+      : undefined;
+
+  if (payments !== undefined) {
+    data.paymentType = payments[0].payment_type;
+  } else if (dto.payment_type !== undefined) {
     data.paymentType = dto.payment_type;
   }
 
@@ -196,7 +254,18 @@ function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
     transactionData.paymentType = dto.payment_type;
   }
 
-  if (Object.keys(transactionData).length > 0) {
+  if (payments !== undefined) {
+    data.transactions = {
+      create: payments.map((payment) => ({
+        amount: payment.amount,
+        paymentType: payment.payment_type,
+        transactionType: TransactionType.INCOME,
+      })),
+      deleteMany: {
+        transactionType: TransactionType.INCOME,
+      },
+    };
+  } else if (Object.keys(transactionData).length > 0) {
     data.transactions = {
       updateMany: {
         data: transactionData,
@@ -208,6 +277,59 @@ function buildRecordUpdateData(dto: UpdateRecordDto): Prisma.RecordUpdateInput {
   }
 
   return data;
+}
+
+type BuildRecordPaymentsOptions = {
+  fallbackPaymentType?: PaymentType;
+};
+
+function buildRecordPayments(
+  payments: RecordPaymentDto[] | undefined,
+  price: number | undefined,
+  options: BuildRecordPaymentsOptions = {},
+): RecordPaymentDto[] {
+  if (price === undefined || price <= 0) {
+    throw new InvalidRecordException("price must be positive");
+  }
+
+  if (!payments || payments.length === 0) {
+    if (!options.fallbackPaymentType) {
+      throw new InvalidRecordException("payments are required");
+    }
+
+    return [{ amount: price, payment_type: options.fallbackPaymentType }];
+  }
+
+  const seenPaymentTypes = new Set<PaymentType>();
+  const normalizedPayments: RecordPaymentDto[] = [];
+
+  for (const payment of payments) {
+    if (payment.amount <= 0) {
+      throw new InvalidRecordException("payment amount must be positive");
+    }
+
+    if (seenPaymentTypes.has(payment.payment_type)) {
+      throw new InvalidRecordException("duplicate payment type");
+    }
+
+    seenPaymentTypes.add(payment.payment_type);
+    normalizedPayments.push(payment);
+  }
+
+  const total = normalizedPayments.reduce(
+    (sum, payment) => sum + payment.amount,
+    0,
+  );
+
+  if (!isSameAmount(total, price)) {
+    throw new InvalidRecordException("payments total must equal price");
+  }
+
+  return normalizedPayments;
+}
+
+function isSameAmount(left: number, right: number): boolean {
+  return Math.abs(left - right) < 0.000001;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {

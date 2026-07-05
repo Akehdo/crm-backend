@@ -13,7 +13,11 @@ import {
 } from "@nestjs/common";
 
 import { AccessTokenGuard } from "../auth/guards/access-token.guard";
-import { Record as RecordModel } from "../../prisma/generated";
+import {
+  Record as RecordModel,
+  Transaction,
+  TransactionType,
+} from "../../prisma/generated";
 import { createPaginationMeta } from "../../shared/pagination";
 import { CreateRecordDto } from "./dto/create-record.dto";
 import { ListRecordsDto } from "./dto/list-records.dto";
@@ -61,7 +65,11 @@ export class RecordsController {
   }
 }
 
-function recordResponse(record: RecordModel) {
+type RecordResponseModel = RecordModel & {
+  transactions?: Transaction[];
+};
+
+function recordResponse(record: RecordResponseModel) {
   return {
     id: record.id,
     client_code: Number(record.clientCode),
@@ -69,6 +77,7 @@ function recordResponse(record: RecordModel) {
     weight: record.weight,
     price: record.price,
     payment_type: record.paymentType,
+    payments: paymentsResponse(record),
     created_at: record.createdAt,
     updated_at: record.updatedAt,
   };
@@ -80,4 +89,24 @@ function trackNumbersResponse(value: unknown): string[] {
   }
 
   return value.filter((item): item is string => typeof item === "string");
+}
+
+function paymentsResponse(record: RecordResponseModel) {
+  const payments = record.transactions
+    ?.filter((transaction) => transaction.transactionType === TransactionType.INCOME)
+    .map((transaction) => ({
+      amount: transaction.amount,
+      payment_type: transaction.paymentType,
+    }));
+
+  if (payments && payments.length > 0) {
+    return payments;
+  }
+
+  return [
+    {
+      amount: record.price,
+      payment_type: record.paymentType,
+    },
+  ];
 }
