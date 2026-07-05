@@ -13,7 +13,7 @@ import { PaymentType } from "../../../prisma/generated";
 export class UpdateExpenseDto {
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: "invalid value" })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: "invalid value" })
   @Min(0.01, { message: "invalid value" })
   amount?: number;
 

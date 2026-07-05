@@ -18,8 +18,8 @@ export class CreateTransactionDto {
   payment_type!: PaymentType;
 
   @Type(() => Number)
-  @IsNumber({}, { message: "invalid value" })
-  @Min(0.0000001, { message: "invalid value" })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: "invalid value" })
+  @Min(0.01, { message: "invalid value" })
   amount!: number;
 
   @IsOptional()
