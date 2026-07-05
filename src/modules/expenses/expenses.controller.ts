@@ -14,6 +14,7 @@ import {
 
 import { Expense } from "../../prisma/generated";
 import { createPaginationMeta } from "../../shared/pagination";
+import { toMoneyNumber } from "../../shared/money";
 import { AccessTokenGuard } from "../auth/guards/access-token.guard";
 import { CreateExpenseDto } from "./dto/create-expense.dto";
 import { ListExpensesDto } from "./dto/list-expenses.dto";
@@ -59,7 +60,7 @@ export class ExpensesController {
 
 function expenseResponse(expense: Expense) {
   return {
-    amount: expense.amount,
+    amount: toMoneyNumber(expense.amount),
     comment: expense.comment,
     created_at: expense.createdAt,
     id: expense.id,

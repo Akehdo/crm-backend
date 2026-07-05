@@ -19,6 +19,7 @@ import {
   TransactionType,
 } from "../../prisma/generated";
 import { createPaginationMeta } from "../../shared/pagination";
+import { toMoneyNumber } from "../../shared/money";
 import { CreateRecordDto } from "./dto/create-record.dto";
 import { ListRecordsDto } from "./dto/list-records.dto";
 import { UpdateRecordDto } from "./dto/update-record.dto";
@@ -75,7 +76,7 @@ function recordResponse(record: RecordResponseModel) {
     client_code: Number(record.clientCode),
     track_numbers: trackNumbersResponse(record.trackNumbers),
     weight: record.weight,
-    price: record.price,
+    price: toMoneyNumber(record.price),
     payment_type: record.paymentType,
     payments: paymentsResponse(record),
     created_at: record.createdAt,
@@ -93,9 +94,11 @@ function trackNumbersResponse(value: unknown): string[] {
 
 function paymentsResponse(record: RecordResponseModel) {
   const payments = record.transactions
-    ?.filter((transaction) => transaction.transactionType === TransactionType.INCOME)
+    ?.filter(
+      (transaction) => transaction.transactionType === TransactionType.INCOME,
+    )
     .map((transaction) => ({
-      amount: transaction.amount,
+      amount: toMoneyNumber(transaction.amount),
       payment_type: transaction.paymentType,
     }));
 
@@ -105,7 +108,7 @@ function paymentsResponse(record: RecordResponseModel) {
 
   return [
     {
-      amount: record.price,
+      amount: toMoneyNumber(record.price),
       payment_type: record.paymentType,
     },
   ];

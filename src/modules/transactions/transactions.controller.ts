@@ -1,12 +1,8 @@
-import {
-  Controller,
-  Get,
-  Query,
-  UseGuards,
-} from "@nestjs/common";
+import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 
 import { Transaction } from "../../prisma/generated";
 import { createPaginationMeta } from "../../shared/pagination";
+import { toMoneyNumber } from "../../shared/money";
 import { AccessTokenGuard } from "../auth/guards/access-token.guard";
 import { ListTransactionsDto } from "./dto/list-transactions.dto";
 import { TransactionsService } from "./transactions.service";
@@ -30,7 +26,7 @@ export class TransactionsController {
 
 function transactionResponse(transaction: Transaction) {
   return {
-    amount: transaction.amount,
+    amount: toMoneyNumber(transaction.amount),
     created_at: transaction.createdAt,
     expense_id: transaction.expenseId,
     id: transaction.id,
