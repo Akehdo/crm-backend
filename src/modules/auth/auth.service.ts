@@ -1,9 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 
-import { User } from "../../prisma/generated";
 import { UsersService } from "../users/users.service";
-import { UserAlreadyExistsException } from "../users/exceptions/user-already-exists.exception";
 import { UserNotFoundException } from "../users/exceptions/user-not-found.exception";
 import { InvalidCredentialsException } from "./exceptions/invalid-credentials.exception";
 import { InvalidRefreshTokenException } from "./exceptions/invalid-refresh-token.exception";
@@ -70,17 +68,6 @@ export class AuthService {
 
       throw error;
     }
-  }
-
-  async register(email: string, password: string): Promise<User> {
-    const normalizedEmail = normalizeEmail(email);
-
-    if (await this.users.existsByEmail(normalizedEmail)) {
-      throw new UserAlreadyExistsException();
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10);
-    return this.users.create(normalizedEmail, passwordHash, "user");
   }
 
   private async issueTokens(userId: string, role: string): Promise<TokenPair> {
