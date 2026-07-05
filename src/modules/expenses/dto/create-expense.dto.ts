@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import {
+  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -7,11 +8,17 @@ import {
   Min,
 } from "class-validator";
 
+import { PaymentType } from "../../../prisma/generated";
+
 export class CreateExpenseDto {
   @Type(() => Number)
   @IsNumber({}, { message: "invalid value" })
   @Min(0.01, { message: "invalid value" })
   amount!: number;
+
+  @IsOptional()
+  @IsEnum(PaymentType, { message: "invalid value" })
+  payment_type?: PaymentType;
 
   @IsOptional()
   @IsString({ message: "invalid value" })
