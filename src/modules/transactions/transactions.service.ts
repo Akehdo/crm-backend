@@ -71,10 +71,6 @@ function validateTransactionDto(dto: CreateTransactionDto): void {
     throw new InvalidTransactionException("amount must be positive");
   }
 
-  if (!Number.isInteger(dto.amount)) {
-    throw new InvalidTransactionException("amount must be an integer");
-  }
-
   const hasRecordId = Boolean(normalizeOptionalId(dto.record_id));
   const hasExpenseId = Boolean(normalizeOptionalId(dto.expense_id));
 
