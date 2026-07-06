@@ -2,8 +2,10 @@
 .agents
 .codex
 .env
+.env*
 Dockerfile
 docker-compose.yml
+docker-compose*.yml
 tmp
 bin
 node_modules
