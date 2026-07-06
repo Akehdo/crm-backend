@@ -78,6 +78,33 @@ For Docker:
 docker compose up --build
 ```
 
+### Production Docker Compose
+
+Production compose keeps database, Redis, and backend ports private. The frontend is
+also not published directly; put your reverse proxy on the external Docker network
+and proxy traffic to `http://crm-frontend:80`.
+
+Create the proxy network once:
+
+```bash
+docker network create crm_proxy
+```
+
+Create the production env file:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Fill in real secrets in `.env.production`, then run:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+```
+
+Only the reverse proxy should publish public `80/443` ports. Postgres, Redis, and the
+backend stay reachable only inside Docker networks.
+
 If you already started the old auto-increment ID schema locally, PostgreSQL may need a fresh
 dev volume before applying the UUID primary key schema:
 
