@@ -8,9 +8,9 @@ export class RefreshTokensService {
   constructor(private readonly redis: RedisService) {}
 
   async consume(tokenHash: string): Promise<string> {
-    const value = await this.redis
-      .getClient()
-      .call("GETDEL", this.key(tokenHash));
+    // Use GETDEL so a refresh token is valid only once.
+    const key = `auth:refresh:${tokenHash}`;
+    const value = await this.redis.getClient().call("GETDEL", key);
 
     if (typeof value !== "string") {
       throw new InvalidRefreshTokenException();
@@ -20,7 +20,8 @@ export class RefreshTokensService {
   }
 
   async delete(tokenHash: string): Promise<number> {
-    return this.redis.getClient().del(this.key(tokenHash));
+    const key = `auth:refresh:${tokenHash}`;
+    return this.redis.getClient().del(key);
   }
 
   async save(
@@ -28,14 +29,12 @@ export class RefreshTokensService {
     userId: string,
     ttlSeconds: number,
   ): Promise<boolean> {
+    // Store only the hashed token and let Redis expire it automatically.
+    const key = `auth:refresh:${tokenHash}`;
     const result = await this.redis
       .getClient()
-      .set(this.key(tokenHash), userId, "EX", ttlSeconds);
+      .set(key, userId, "EX", ttlSeconds);
 
     return result === "OK";
-  }
-
-  private key(tokenHash: string): string {
-    return `auth:refresh:${tokenHash}`;
   }
 }

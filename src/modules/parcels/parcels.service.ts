@@ -12,7 +12,20 @@ export class ParcelsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(trackNumbers: string[]): Promise<CreateParcelsResult> {
-    const normalized = normalizeTrackNumbers(trackNumbers);
+    // Trim incoming track numbers, drop empty values, and keep only first copies.
+    const seen = new Set<string>();
+    const normalized: string[] = [];
+
+    for (const value of trackNumbers) {
+      const trackNumber = value.trim();
+      if (!trackNumber || seen.has(trackNumber)) {
+        continue;
+      }
+
+      seen.add(trackNumber);
+      normalized.push(trackNumber);
+    }
+
     if (normalized.length === 0) {
       throw new InvalidParcelRequestException("track numbers are required");
     }
@@ -68,7 +81,20 @@ export class ParcelsService {
     trackNumbers: string[],
     status: ParcelStatus,
   ): Promise<Parcel[]> {
-    const normalized = normalizeTrackNumbers(trackNumbers);
+    // Trim incoming track numbers, drop empty values, and keep only first copies.
+    const seen = new Set<string>();
+    const normalized: string[] = [];
+
+    for (const value of trackNumbers) {
+      const trackNumber = value.trim();
+      if (!trackNumber || seen.has(trackNumber)) {
+        continue;
+      }
+
+      seen.add(trackNumber);
+      normalized.push(trackNumber);
+    }
+
     if (normalized.length === 0) {
       throw new InvalidParcelRequestException("track numbers are required");
     }
@@ -86,21 +112,4 @@ export class ParcelsService {
       ),
     );
   }
-}
-
-function normalizeTrackNumbers(trackNumbers: string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-
-  for (const value of trackNumbers) {
-    const trackNumber = value.trim();
-    if (!trackNumber || seen.has(trackNumber)) {
-      continue;
-    }
-
-    seen.add(trackNumber);
-    result.push(trackNumber);
-  }
-
-  return result;
 }

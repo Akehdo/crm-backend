@@ -18,7 +18,8 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string): Promise<TokenPair> {
-    const normalizedEmail = normalizeEmail(email);
+    // Normalize email at the service boundary before looking up the user.
+    const normalizedEmail = email.trim().toLowerCase();
 
     try {
       const user = await this.users.findByEmail(normalizedEmail);
@@ -28,7 +29,24 @@ export class AuthService {
         throw new InvalidCredentialsException();
       }
 
-      return this.issueTokens(user.id, user.role);
+      // Issue a short-lived access token and persist the refresh token hash.
+      const accessToken = await this.tokenService.generateAccessToken(
+        user.id,
+        user.role,
+      );
+      const refreshToken = this.tokenService.generateRefreshToken();
+      const refreshTokenHash = this.tokenService.hashRefreshToken(refreshToken);
+
+      await this.refreshTokens.save(
+        refreshTokenHash,
+        user.id,
+        this.tokenService.refreshTtlSeconds,
+      );
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      };
     } catch (error) {
       if (error instanceof UserNotFoundException) {
         throw new InvalidCredentialsException();
@@ -55,12 +73,31 @@ export class AuthService {
       throw new InvalidRefreshTokenException();
     }
 
+    // Consume the old refresh token first so it cannot be reused.
     const oldTokenHash = this.tokenService.hashRefreshToken(oldRefreshToken);
     const userId = await this.refreshTokens.consume(oldTokenHash);
 
     try {
       const user = await this.users.findById(userId);
-      return this.issueTokens(user.id, user.role);
+
+      // Issue a replacement pair and save only the hashed refresh token.
+      const accessToken = await this.tokenService.generateAccessToken(
+        user.id,
+        user.role,
+      );
+      const refreshToken = this.tokenService.generateRefreshToken();
+      const refreshTokenHash = this.tokenService.hashRefreshToken(refreshToken);
+
+      await this.refreshTokens.save(
+        refreshTokenHash,
+        user.id,
+        this.tokenService.refreshTtlSeconds,
+      );
+
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      };
     } catch (error) {
       if (error instanceof UserNotFoundException) {
         throw new InvalidRefreshTokenException();
@@ -69,28 +106,4 @@ export class AuthService {
       throw error;
     }
   }
-
-  private async issueTokens(userId: string, role: string): Promise<TokenPair> {
-    const accessToken = await this.tokenService.generateAccessToken(
-      userId,
-      role,
-    );
-    const refreshToken = this.tokenService.generateRefreshToken();
-    const refreshTokenHash = this.tokenService.hashRefreshToken(refreshToken);
-
-    await this.refreshTokens.save(
-      refreshTokenHash,
-      userId,
-      this.tokenService.refreshTtlSeconds,
-    );
-
-    return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    };
-  }
-}
-
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
 }

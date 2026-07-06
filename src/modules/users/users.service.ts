@@ -22,7 +22,10 @@ export class UsersService {
         },
       });
     } catch (error) {
-      if (isUniqueConstraintError(error)) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
         throw new UserAlreadyExistsException();
       }
 
@@ -62,11 +65,4 @@ export class UsersService {
 
     return user;
   }
-}
-
-function isUniqueConstraintError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002"
-  );
 }

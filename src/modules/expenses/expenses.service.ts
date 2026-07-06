@@ -19,6 +19,7 @@ export class ExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateExpenseDto): Promise<Expense> {
+    // Validate the request before any database work.
     if (dto.amount <= 0) {
       throw new InvalidExpenseException("amount must be positive");
     }
@@ -27,12 +28,14 @@ export class ExpensesService {
       throw new InvalidExpenseException("comment cannot be empty");
     }
 
+    // Normalize optional fields in the same place where create data is built.
+    const comment = dto.comment?.trim() ?? "";
     const paymentType = dto.payment_type ?? PaymentType.cash;
 
     return this.prisma.expense.create({
       data: {
         amount: dto.amount,
-        comment: normalizeComment(dto.comment),
+        comment,
         paymentType,
         transactions: {
           create: {
@@ -66,8 +69,55 @@ export class ExpensesService {
   }
 
   async update(id: string, dto: UpdateExpenseDto): Promise<Expense> {
-    const expenseId = parseExpenseId(id);
-    const data = buildExpenseUpdateData(dto);
+    // Validate the route id before building the update payload.
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+    ) {
+      throw new InvalidExpenseException("invalid expense id");
+    }
+
+    // Build the Expense update object field by field from the received dto.
+    const data: Prisma.ExpenseUpdateInput = {};
+
+    if (dto.amount !== undefined) {
+      if (dto.amount <= 0) {
+        throw new InvalidExpenseException("amount must be positive");
+      }
+
+      data.amount = dto.amount;
+    }
+
+    if (dto.payment_type !== undefined) {
+      data.paymentType = dto.payment_type;
+    }
+
+    if (dto.comment !== undefined) {
+      data.comment = dto.comment.trim();
+    }
+
+    // Keep linked EXPENSE transactions in sync when money fields change.
+    const transactionData: Prisma.TransactionUpdateManyMutationInput = {};
+
+    if (dto.amount !== undefined) {
+      transactionData.amount = dto.amount;
+    }
+
+    if (dto.payment_type !== undefined) {
+      transactionData.paymentType = dto.payment_type;
+    }
+
+    if (Object.keys(transactionData).length > 0) {
+      data.transactions = {
+        updateMany: {
+          data: transactionData,
+          where: {
+            transactionType: TransactionType.EXPENSE,
+          },
+        },
+      };
+    }
 
     if (Object.keys(data).length === 0) {
       throw new InvalidExpenseException("at least one field is required");
@@ -76,10 +126,13 @@ export class ExpensesService {
     try {
       return await this.prisma.expense.update({
         data,
-        where: { id: expenseId },
+        where: { id },
       });
     } catch (error) {
-      if (isRecordNotFoundError(error)) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
         throw new ExpenseNotFoundException();
       }
 
@@ -88,95 +141,36 @@ export class ExpensesService {
   }
 
   async delete(id: string): Promise<Expense> {
-    const expenseId = parseExpenseId(id);
+    // Validate the route id before deleting the expense and its transactions.
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+    ) {
+      throw new InvalidExpenseException("invalid expense id");
+    }
 
     try {
+      // Delete child transactions first, then the expense in one transaction.
       const [, expense] = await this.prisma.$transaction([
         this.prisma.transaction.deleteMany({
-          where: { expenseId },
+          where: { expenseId: id },
         }),
         this.prisma.expense.delete({
-          where: { id: expenseId },
+          where: { id },
         }),
       ]);
 
       return expense;
     } catch (error) {
-      if (isRecordNotFoundError(error)) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
         throw new ExpenseNotFoundException();
       }
 
       throw error;
     }
   }
-}
-
-function buildExpenseUpdateData(
-  dto: UpdateExpenseDto,
-): Prisma.ExpenseUpdateInput {
-  const data: Prisma.ExpenseUpdateInput = {};
-
-  if (dto.amount !== undefined) {
-    if (dto.amount <= 0) {
-      throw new InvalidExpenseException("amount must be positive");
-    }
-
-    data.amount = dto.amount;
-  }
-
-  if (dto.payment_type !== undefined) {
-    data.paymentType = dto.payment_type;
-  }
-
-  if (dto.comment !== undefined) {
-    data.comment = normalizeComment(dto.comment);
-  }
-
-  const transactionData: Prisma.TransactionUpdateManyMutationInput = {};
-
-  if (dto.amount !== undefined) {
-    transactionData.amount = dto.amount;
-  }
-
-  if (dto.payment_type !== undefined) {
-    transactionData.paymentType = dto.payment_type;
-  }
-
-  if (Object.keys(transactionData).length > 0) {
-    data.transactions = {
-      updateMany: {
-        data: transactionData,
-        where: {
-          transactionType: TransactionType.EXPENSE,
-        },
-      },
-    };
-  }
-
-  return data;
-}
-
-function normalizeComment(comment?: string): string {
-  return comment?.trim() ?? "";
-}
-
-function isRecordNotFoundError(error: unknown): boolean {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2025"
-  );
-}
-
-function parseExpenseId(id: string): string {
-  if (!isUuid(id)) {
-    throw new InvalidExpenseException("invalid expense id");
-  }
-
-  return id;
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
 }

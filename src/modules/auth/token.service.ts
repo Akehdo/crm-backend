@@ -74,7 +74,12 @@ export class TokenService {
       throw new Error("invalid token payload");
     }
 
-    if (!isUuid(payload.sub)) {
+    // Access tokens must always point to a persisted UUID user id.
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        payload.sub,
+      )
+    ) {
       throw new Error("invalid token subject");
     }
 
@@ -83,10 +88,4 @@ export class TokenService {
       userId: payload.sub,
     };
   }
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
 }
