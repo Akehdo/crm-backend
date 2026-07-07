@@ -27,13 +27,17 @@ ARG DATABASE_URL=postgresql://postgres:postgres@postgres:5432/crm?schema=public
 ENV DATABASE_URL=$DATABASE_URL
 RUN npm run build
 
+FROM deps AS prod-deps
+
+RUN npm prune --omit=dev
+
 FROM node:22-alpine AS production
 
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+COPY --from=prod-deps /app/node_modules ./node_modules
 
 COPY prisma.config.ts ./
 COPY prisma ./prisma
