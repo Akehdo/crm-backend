@@ -72,23 +72,20 @@ npx prisma migrate deploy
 For migration diff checks against migration history, create a separate local shadow
 database and set `SHADOW_DATABASE_URL`.
 
-For Docker:
+For Docker dev mode:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
+This starts Postgres, Redis, the backend in Nest watch mode, and the frontend in
+Vite dev mode.
 
 ### Production Docker Compose
 
-Production compose keeps database, Redis, and backend ports private. The frontend is
-also not published directly; put your reverse proxy on the external Docker network
-and proxy traffic to `http://crm-frontend:80`.
-
-Create the proxy network once:
-
-```bash
-docker network create crm_proxy
-```
+Production compose keeps Postgres, Redis, and the backend private. Only the
+frontend/nginx container is published on `FRONTEND_BIND:FRONTEND_PORT`.
 
 Create the production env file:
 
@@ -99,21 +96,22 @@ cp .env.production.example .env.production
 Fill in real secrets in `.env.production`, then run:
 
 ```bash
-docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Only the reverse proxy should publish public `80/443` ports. Postgres, Redis, and the
-backend stay reachable only inside Docker networks.
+Point your reverse proxy to the published frontend port, or set
+`FRONTEND_BIND=0.0.0.0` and `FRONTEND_PORT=80` to publish nginx directly. Postgres,
+Redis, and the backend stay reachable only inside Docker networks.
 
 If you already started the old auto-increment ID schema locally, PostgreSQL may need a fresh
 dev volume before applying the UUID primary key schema:
 
 ```bash
-docker compose down -v
-docker compose up --build
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.dev.yml down -v
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
-The API listens on:
+In dev mode, the API listens on:
 
 ```text
 http://localhost:8080

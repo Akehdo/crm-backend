@@ -1,9 +1,22 @@
-FROM node:22-alpine AS deps
+FROM node:22-alpine AS base
 
 WORKDIR /app
 
 COPY package*.json ./
+
+FROM base AS deps
+
 RUN npm ci
+
+FROM deps AS dev
+
+ENV NODE_ENV=development
+
+COPY . .
+
+EXPOSE 8080
+
+CMD ["npm", "run", "start:dev"]
 
 FROM deps AS builder
 
@@ -14,7 +27,7 @@ ARG DATABASE_URL=postgresql://postgres:postgres@postgres:5432/crm?schema=public
 ENV DATABASE_URL=$DATABASE_URL
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22-alpine AS production
 
 WORKDIR /app
 ENV NODE_ENV=production
