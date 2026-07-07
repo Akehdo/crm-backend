@@ -84,8 +84,9 @@ Vite dev mode.
 
 ### Production Docker Compose
 
-Production compose keeps Postgres, Redis, and the backend private. Only the
-frontend/nginx container is published on `FRONTEND_BIND:FRONTEND_PORT`.
+Production compose keeps Postgres, Redis, and the backend private on an internal
+Docker network. Only the frontend/nginx container is published on
+`FRONTEND_BIND:FRONTEND_PORT`.
 
 Create the production env file:
 
@@ -99,9 +100,9 @@ Fill in real secrets in `.env.production`, then run:
 docker compose --env-file .env.production -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Point your reverse proxy to the published frontend port, or set
+Point your reverse proxy to the published frontend port, or keep
 `FRONTEND_BIND=0.0.0.0` and `FRONTEND_PORT=80` to publish nginx directly. Postgres,
-Redis, and the backend stay reachable only inside Docker networks.
+Redis, and the backend stay reachable only inside the internal Docker network.
 
 If you already started the old auto-increment ID schema locally, PostgreSQL may need a fresh
 dev volume before applying the UUID primary key schema:
